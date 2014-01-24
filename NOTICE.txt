@@ -1,0 +1,13 @@
+Bean Testing
+Copyright 2013 NovaTec GmbH.
+
+This product includes software developed for NovaTec Consulting GmbH
+
+This product includes software from:
+
+Simple Logging Facade for Java (SLF4J) (http://www.slf4j.org/) under the MIT License.
+Apache Deltaspike  (http://deltaspike.apache.org/) under the Apache License 2.0.
+JBoss Weld (http://weld.cdi-spec.org/) under the Apache Licesne 2.0.
+Junit (http://junit.org/) under the Eclipse Public License 1.0.
+Mockito (https://code.google.com/p/mockito/) under the MIT License.
+Hamcrest (https://code.google.com/p/hamcrest/) under the BSD License.
