@@ -15,13 +15,20 @@
  */
 package info.novatec.beantest.transactions;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import javax.inject.Inject;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
+import javax.persistence.LockTimeoutException;
+import javax.persistence.NoResultException;
+import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceContext;
+import javax.persistence.QueryTimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +46,17 @@ import org.slf4j.LoggerFactory;
 @Interceptor
 @Transactional
 public class TransactionalInterceptor {
+    
+    /**
+     * Exceptions that should not cause the transaction to rollback according to Java EE Documentation. 
+     * (http://docs.oracle.com/javaee/6/api/javax/persistence/PersistenceException.html)
+     */
+    private static final Set<Class<?>> NO_ROLLBACK_EXCEPTIONS=new HashSet<Class<?>>(Arrays.asList(
+            NonUniqueResultException.class,
+            NoResultException.class,
+            QueryTimeoutException.class,
+            LockTimeoutException.class));
+    
 
     @Inject
     @PersistenceContext
@@ -50,6 +68,7 @@ public class TransactionalInterceptor {
 
     @AroundInvoke
     public Object manageTransaction(InvocationContext ctx) throws Exception {
+        
         EntityTransaction transaction = em.getTransaction();
         if (!transaction.isActive()) {
             transaction.begin();
@@ -63,7 +82,7 @@ public class TransactionalInterceptor {
 
         } catch (Exception e) {
             if (isFirstInterceptor()) {
-                markRollbackTransaction();
+                markRollbackTransaction(e);
             }
             throw e;
         } finally {
@@ -104,9 +123,9 @@ public class TransactionalInterceptor {
     /**
      * Marks the transaction for rollback via {@link EntityTransaction#setRollbackOnly()}.
      */
-    private void markRollbackTransaction() {
+    private void markRollbackTransaction(Exception exception) {
         try {
-            if (em.isOpen() && em.getTransaction().isActive()) {
+            if (em.isOpen() && em.getTransaction().isActive() && shouldExceptionCauseRollback(exception)) {
                 em.getTransaction().setRollbackOnly();
             }
         } catch (Exception e) {
@@ -117,6 +136,10 @@ public class TransactionalInterceptor {
 
     private static boolean isFirstInterceptor() {
         return INTERCEPTOR_COUNTER -1 == 0;
+    }
+    
+    private static boolean shouldExceptionCauseRollback(Exception e ) {
+        return ! NO_ROLLBACK_EXCEPTIONS.contains(e.getClass());
     }
 
 }

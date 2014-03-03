@@ -21,6 +21,7 @@ import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.PersistenceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,4 +79,17 @@ public class MyEJBService {
             otherService.throwException();
             //Entity should have not been persisted.
     }
+     
+     /**
+      * Persists the given entity and throws a {@link PersistenceException} that should not rollback the transaction<p>
+      * 
+      * @param entity the entity that should be persisted
+      * 
+      * @see http://docs.oracle.com/javaee/6/api/javax/persistence/PersistenceException.html
+      */
+     public void saveEntityAndCausePersistenceExceptionWithoutRollback(MyEntity entity) {
+         em.persist(entity);
+         //Throw a NoResultFoundException.
+         em.createQuery("Select e from MyEntity as e where e.id = :nonExistentId").setParameter("nonExistentId", -42L).getSingleResult();
+     }
 }
