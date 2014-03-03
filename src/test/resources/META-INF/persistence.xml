@@ -6,7 +6,7 @@
         <jta-data-source>jdbc/productionDS</jta-data-source>
     </persistence-unit>
     
-    <persistence-unit name="test" transaction-type="RESOURCE_LOCAL">
+    <persistence-unit name="beanTestPU" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
         <class>info.novatec.beantest.demo.entities.MyEntity</class>
         <properties>

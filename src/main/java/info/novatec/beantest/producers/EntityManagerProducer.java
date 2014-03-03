@@ -38,18 +38,21 @@ import org.slf4j.LoggerFactory;
 @RequestScoped
 public class EntityManagerProducer {
 
-    private EntityManagerFactory emf;
-
     private static final Logger LOGGER = LoggerFactory.getLogger(EntityManagerProducer.class);
-
+    
+    private static final String DEFAULT_BEAN_TEST_PERSISTENCE_UNIT = "beanTestPU";
+     
+    private EntityManagerFactory emf;
+    
     private EntityManager em;
 
     @PostConstruct
     private void initializeEntityManagerFactory() {
-        emf = Persistence.createEntityManagerFactory("test");
+        emf = Persistence.createEntityManagerFactory(DEFAULT_BEAN_TEST_PERSISTENCE_UNIT);
         LOGGER.info("Entity Manager Factory was successfully initialized");
 
     }
+   
 
     @Produces
     public EntityManager getEntityManager(InjectionPoint ip) {
