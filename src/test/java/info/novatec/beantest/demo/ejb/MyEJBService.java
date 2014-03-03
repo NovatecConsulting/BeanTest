@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
  * This EJB serves as a facade. It calls {@link MyOtherEJBService} to simulate transaction propagation. Furthermore, it provides
  * some methods to test proper transaction handling when exceptions are thrown.
  *
- * @author Carlos Barragan <carlos.barragan@novatec-gmbh.de>
+ * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
 @Stateless
 public class MyEJBService {

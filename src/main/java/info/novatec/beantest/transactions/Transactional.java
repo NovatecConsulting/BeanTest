@@ -26,7 +26,7 @@ import javax.interceptor.InterceptorBinding;
 /**
  * Interceptor binding for transactions.
  *
- * @author Carlos Barragan <carlos.barragan@novatec-gmbh.de>
+ * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
 @InterceptorBinding
 @Target({ElementType.METHOD, ElementType.TYPE})

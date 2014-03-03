@@ -39,7 +39,7 @@ import org.apache.deltaspike.core.util.metadata.builder.AnnotatedTypeBuilder;
  * Therefore the extension changes the meta data of Beans annotated with {@link EJB}<br>
  * It also changes injection points in interceptors.
  *
- * @author Carlos Barragan <carlos.barragan@novatec-gmbh.de>
+ * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
 public class BeanTestExtension implements Extension {
 

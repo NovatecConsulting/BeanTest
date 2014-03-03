@@ -23,7 +23,7 @@ import org.mockito.Mockito;
 /**
  * Creates Mockito mocks for external services.
  * 
- * @author Carlos Barragan <carlos.barragan@novatec-gmbh.de>
+ * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
 public class ExternalServicesMockProducer {
     

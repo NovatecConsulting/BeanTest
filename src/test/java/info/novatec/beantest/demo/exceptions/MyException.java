@@ -19,7 +19,7 @@ package info.novatec.beantest.demo.exceptions;
 /**
  * Demo Exception.
  *
- * @author Carlos Barragan <carlos.barragan@novatec-gmbh.de>
+ * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
 public class MyException extends RuntimeException {
 

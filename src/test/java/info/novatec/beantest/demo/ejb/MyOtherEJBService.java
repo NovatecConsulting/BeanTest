@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Demo EJB Service.
  *
- * @author Carlos Barragan <carlos.barragan@novatec-gmbh.de>
+ * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
 @Stateless
 public class MyOtherEJBService {

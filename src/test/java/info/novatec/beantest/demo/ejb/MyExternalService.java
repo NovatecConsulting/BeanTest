@@ -22,7 +22,7 @@ package info.novatec.beantest.demo.ejb;
  * It is common to have dependencies to external services or modules in a JEE Application. 
  * Usually it is possible to access those external services via a shared interface. The implementation of
  * such interface is normally located in another module or application.
- * @author Carlos Barragan <carlos.barragan@novatec-gmbh.de>
+ * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
 public interface MyExternalService {
     

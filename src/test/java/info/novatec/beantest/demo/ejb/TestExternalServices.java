@@ -26,7 +26,7 @@ import org.mockito.Mockito;
 /**
  * This is an example to demonstrate how to test external services.
  * 
- * @author Carlos Barragan <carlos.barragan@novatec-gmbh.de>
+ * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
 public class TestExternalServices extends BaseBeanTest {
     

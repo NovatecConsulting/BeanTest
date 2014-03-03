@@ -23,7 +23,7 @@ import javax.persistence.Id;
 /**
  * Demo Entity.
  *
- * @author Carlos Barragan <carlos.barragan@novatec-gmbh.de>
+ * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
 @Entity
 public class MyEntity implements Serializable {

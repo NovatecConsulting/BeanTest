@@ -21,7 +21,7 @@ package info.novatec.beantest.api;
  * <p>
  * This event will be fired when the CDI container is about to shutdown.
  * 
- * @author Carlos Barragan <carlos.barragan@novatec-gmbh.de>
+ * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
 public class CdiContainerShutdown {
     

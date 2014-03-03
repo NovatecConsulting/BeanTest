@@ -23,7 +23,7 @@ import org.junit.Before;
 /**
  * Base class for initializing the {@link  BeanProviderHelper}
  *
- * @author Carlos Barragan <carlos.barragan@novatec-gmbh.de>
+ * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
 public abstract class BaseBeanTest {
     

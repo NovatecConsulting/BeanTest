@@ -24,7 +24,7 @@ import org.apache.deltaspike.core.api.provider.BeanProvider;
 /**
  * Entry point to obtain bean references.
  *
- * @author Carlos Barragan <carlos.barragan@novatec-gmbh.de>
+ * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
 public class BeanProviderHelper {
 

@@ -31,7 +31,7 @@ import org.junit.Test;
  * <p>
  * The database schema is recreated for every test method.
  *
- * @author Carlos Barragan <carlos.barragan@novatec-gmbh.de>
+ * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */ 
 public class TestEJBInjection extends BaseBeanTest{
     

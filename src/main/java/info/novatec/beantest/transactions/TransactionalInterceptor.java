@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  * Alternatively the Apache Deltaspike JPA module can be used. The JPA module provides more advanced transaction handling. 
  * However, this implementation should suffice for testing purposes.
  *
- * @author Carlos Barragan <carlos.barragan@novatec-gmbh.de>
+ * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
 @Interceptor
 @Transactional

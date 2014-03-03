@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
  * <p>
  * It initializes the entity manager to be injected in EJBs
  *
- * @author Carlos Barragan <carlos.barragan@novatec-gmbh.de>
+ * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
 @RequestScoped
 public class EntityManagerProducer {
@@ -69,7 +69,7 @@ public class EntityManagerProducer {
     }
     
     /**
-     * Closes the entity manager and entity manager factory when the event {@link ContainerShutdown} is fired.
+     * Closes the entity manager and entity manager factory when the event {@link CdiContainerShutdown} is fired.
      * 
      * @param containerShutdown
      *            the event that indicates that the container is about to shutdown.
