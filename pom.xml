@@ -5,6 +5,9 @@
     <artifactId>bean-test</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>Bean Testing</name>
+    <description>Java EE Bean Testing framework</description>
+    <url>http://blog.novatec-gmbh.de/unit-testing-jee-applications-cdi/</url>
+    <packaging>jar</packaging>
         
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -84,14 +87,10 @@
         </dependency>
             
     </dependencies>
-    <repositories>
-        <repository>
-            <id>JBoss</id>
-            <name>JBoss repository</name>
-            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
-        </repository>
-
-    </repositories>
+    <scm>
+        <url>https://github.com/NovaTecConsulting/BeanTest.git</url>
+        
+    </scm>
 
     <build>
         <plugins>
