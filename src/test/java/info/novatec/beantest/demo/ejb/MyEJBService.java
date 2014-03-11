@@ -16,6 +16,7 @@
 package info.novatec.beantest.demo.ejb;
 
 import info.novatec.beantest.demo.entities.MyEntity;
+import info.novatec.beantest.demo.entities.MyEntityWithConstraints;
 import info.novatec.beantest.demo.exceptions.MyException;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
@@ -91,5 +92,13 @@ public class MyEJBService {
          em.persist(entity);
          //Throw a NoResultFoundException.
          em.createQuery("Select e from MyEntity as e where e.id = :nonExistentId").setParameter("nonExistentId", -42L).getSingleResult();
+     }
+     
+     /**
+      * Saves the given entity by delegating the call to {@link MyOtherEJBService#save(info.novatec.beantest.demo.entities.MyEntityWithConstraints)}
+      * @param entity the entity that should be saved.
+      */
+     public void save(MyEntityWithConstraints entity) {
+         otherService.save(entity);
      }
 }

@@ -98,7 +98,7 @@ public class TransactionalInterceptor {
      * Commits the current transaction if it is not already marked as rollback via the {@link EntityTransaction#getRollbackOnly()} method.
      * In that case, a rollback will be executed.
      */
-    private void processTransaction() {
+    private void processTransaction() throws Exception {
         EntityTransaction transaction = em.getTransaction();
         try {
             
@@ -114,6 +114,7 @@ public class TransactionalInterceptor {
             }
         } catch (Exception e) {
             LOGGER.warn("Error when trying to commit transaction: {0}", e);
+            throw e;
         } finally {
             INTERCEPTOR_COUNTER--;
         }
@@ -123,13 +124,14 @@ public class TransactionalInterceptor {
     /**
      * Marks the transaction for rollback via {@link EntityTransaction#setRollbackOnly()}.
      */
-    private void markRollbackTransaction(Exception exception) {
+    private void markRollbackTransaction(Exception exception) throws Exception {
         try {
             if (em.isOpen() && em.getTransaction().isActive() && shouldExceptionCauseRollback(exception)) {
                 em.getTransaction().setRollbackOnly();
             }
         } catch (Exception e) {
             LOGGER.warn("Error when trying to roll back the  transaction: {0}", e);
+            throw e;
         }
 
     }

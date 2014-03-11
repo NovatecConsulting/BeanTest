@@ -16,6 +16,7 @@
 package info.novatec.beantest.demo.ejb;
 
 import info.novatec.beantest.demo.entities.MyEntity;
+import info.novatec.beantest.demo.entities.MyEntityWithConstraints;
 import info.novatec.beantest.demo.exceptions.MyException;
 import java.util.Collection;
 import javax.ejb.Stateless;
@@ -54,5 +55,9 @@ public class MyOtherEJBService {
      */
     public void throwException() {
         throw new MyException("Oops, exception was thrown");
+    }
+    
+    public void save(MyEntityWithConstraints entity) {
+        entityManager.persist(entity);
     }
 }
