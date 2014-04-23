@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>info.novatec</groupId>
     <artifactId>bean-test</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.1</version>
     <name>Bean Testing</name>
     <description>Java EE Bean Testing framework</description>
     <url>http://blog.novatec-gmbh.de/unit-testing-jee-applications-cdi/</url>
