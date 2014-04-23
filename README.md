@@ -31,17 +31,35 @@ You can find the examples about how a "Bean" test looks like under
 
 ## How to use it
 
-1.  Just clone the project and build it (mvn clean install)
+*  Add the following dependency in your pom:
 
-2.  Add the dependency to your pom with *test* scope.
+```xml
 
-3.  Create a persistence unit called "beanTestPU" in your
+    <dependency>
+      <groupId>info.novatec</groupId>
+      <artifactId>bean-test</artifactId>
+      <version>{currentVersion}</version>
+      <scope>test</scope>
+    </dependency>
+```
+
+*  You also need to add the following repository to your pom:
+
+```xml
+    <repository>
+       <id>Novatec</id>
+       <name>Novatec Repository</name>
+       <url>http://repository.novatec-gmbh.de/content/repositories/novatec</url>
+    </repository>
+```
+
+*  Create a persistence unit called "beanTestPU" in your
     persistence.xml (it may be under src/test/resources/META-INF)
 
-4.  Write a test similar to the ones in the examples using your
+*  Write a test similar to the ones in the examples using your
     production code.
 
-5.  Depending on your project structure, you might get an
+*  Depending on your project structure, you might get an
     *UnsatisfiedResolutionException* if some classes are not available
     in your classpath. You can solve this by providing a Mock (See the
     mock example for this).
