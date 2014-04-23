@@ -139,5 +139,12 @@
             <distribution>manual</distribution>
         </license>
     </licenses>
+    <distributionManagement>
+        <repository>
+            <id>nt-repo</id>
+            <name>Novatec Repository></name>
+            <url>http://repository.novatec-gmbh.de/content/repositories/novatec/</url>
+        </repository>
+    </distributionManagement>
     
 </project>
