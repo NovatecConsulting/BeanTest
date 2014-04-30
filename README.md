@@ -1,6 +1,6 @@
-# Bean Testing for JEE Applications using CDI
+# Bean Testing for Java EE Applications using CDI
 
-This project attempts to show an interesting approach on testing JEE
+This project attempts to show an interesting approach on testing Java EE
 Applications. It uses a CDI Container to resolve dependencies like EJBs
 or Resources when running unit test in a standard environment.
 
