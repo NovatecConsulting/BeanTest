@@ -52,9 +52,10 @@ You can find the examples about how a "Bean" test looks like under
        <url>http://repository.novatec-gmbh.de/content/repositories/novatec</url>
     </repository>
 ```
+*  Create an empty beans.xml file under src/test/resources/META-INF
 
 *  Create a persistence unit called "beanTestPU" in your
-    persistence.xml (it may be under src/test/resources/META-INF)
+    persistence.xml (you can place it under src/test/resources/META-INF)
 
 *  Write a test similar to the ones in the examples using your
     production code.
