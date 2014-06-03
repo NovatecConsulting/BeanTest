@@ -41,9 +41,20 @@ public class MyEJBService {
     
     @EJB
     MyOtherEJBService otherService;
+    
+    MyOtherEJBService otherService2;
 
     @PersistenceContext(unitName = "db2")
     EntityManager em;
+    
+    @EJB
+    public void setOtherService2(MyOtherEJBService otherService2) {
+		this.otherService2 = otherService2;
+	}
+    
+    public MyOtherEJBService getOtherService2() {
+		return otherService2;
+	}
 
     /**
      * This method calls {@link MyOtherEJBService#doSomething() } and saves a new {@link MyEntity}.

@@ -15,14 +15,16 @@
  */
 package info.novatec.beantest.demo.ejb;
 
-import info.novatec.beantest.api.BaseBeanTest;
-import info.novatec.beantest.demo.entities.MyEntity;
-import info.novatec.beantest.demo.exceptions.MyException;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import info.novatec.beantest.api.BaseBeanTest;
+import info.novatec.beantest.demo.entities.MyEntity;
+import info.novatec.beantest.demo.exceptions.MyException;
+
 import org.junit.Test;
 
 /**
@@ -33,7 +35,7 @@ import org.junit.Test;
  *
  * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */ 
-public class TestEJBInjection extends BaseBeanTest{
+public class TestEJBInjection extends BaseBeanTest {
     
     @Test
     public void shouldInjectEJBAsCDIBean() {
@@ -46,7 +48,7 @@ public class TestEJBInjection extends BaseBeanTest{
         assertThat(myOtherService.getAllEntities(), hasSize(1));
 
     }
-   
+    
     /**
      * Verifies that an entity is saved when an exception is caught by its caller.
      */
@@ -82,5 +84,19 @@ public class TestEJBInjection extends BaseBeanTest{
         
         
     }
+    
+	@Test
+	public void shouldInjectEJBAsCDIBeanUsingSetter() {
+		MyEJBService myService = getBean(MyEJBService.class);
+		
+		assertNotNull(myService.getOtherService2());
+	}
+
+	@Test
+	public void shouldInjectPersistenceContextUsingSetter() {
+		MyEJBServiceWithEntityManagerSetter myService = getBean(MyEJBServiceWithEntityManagerSetter.class);
+		
+		assertNotNull(myService.getEm());
+	}
 
 }

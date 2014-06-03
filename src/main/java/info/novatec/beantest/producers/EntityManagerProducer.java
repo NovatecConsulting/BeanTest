@@ -16,6 +16,10 @@
 package info.novatec.beantest.producers;
 
 import info.novatec.beantest.api.CdiContainerShutdown;
+
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
@@ -25,6 +29,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.PersistenceContext;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +62,18 @@ public class EntityManagerProducer {
     @Produces
     public EntityManager getEntityManager(InjectionPoint ip) {
         PersistenceContext ctx = ip.getAnnotated().getAnnotation(PersistenceContext.class);
+        
+        if (ctx == null) {
+        	//if @PersisteceContext is declared on method, ctx is null at this point.
+        	//ctx should be retrieved from the Method.
+        	Member member = ip.getMember();
+        	if (member instanceof Method) {
+        		Method method = (Method) member;
+        		ctx = method.getAnnotation(PersistenceContext.class);
+        	}
+        }
+        
+        
         LOGGER.debug("PersistenceContext info:");
         LOGGER.debug("Unit name: {}", ctx.unitName());
         LOGGER.debug("Bean defining the injection point: {}", ip.getBean().getBeanClass());
