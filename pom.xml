@@ -145,6 +145,11 @@
             <name>Novatec Repository></name>
             <url>http://repository.novatec-gmbh.de/content/repositories/novatec/</url>
         </repository>
+        <snapshotRepository>
+            <id>nt-repo</id>
+            <name>Novatec Repository></name>
+            <url>http://repository.novatec-gmbh.de/content/repositories/novatec-snapshots/</url>
+        </snapshotRepository>
     </distributionManagement>
     
 </project>
