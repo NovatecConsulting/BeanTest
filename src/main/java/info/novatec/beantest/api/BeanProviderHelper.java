@@ -28,8 +28,8 @@ import org.apache.deltaspike.core.api.provider.BeanProvider;
  */
 public class BeanProviderHelper {
 
-    private  CdiContainer cdiContainer;
-    private static final BeanProviderHelper INSTANCE= new BeanProviderHelper();
+    private CdiContainer cdiContainer;
+    private static final BeanProviderHelper INSTANCE = new BeanProviderHelper();
 
     public static BeanProviderHelper getInstance() {
         return INSTANCE;
@@ -45,7 +45,6 @@ public class BeanProviderHelper {
         cdiContainer = CdiContainerLoader.getCdiContainer();
         cdiContainer.boot();
         cdiContainer.getContextControl().startContexts();
-
     }
 
 
@@ -84,7 +83,7 @@ public class BeanProviderHelper {
      * Shuts down the underlying container.
      */
     public void shutdown() {
-        if (cdiContainer != null) {
+        if (isCdiContainerRunning()) {
             try {
                 fireShutdownEvent();
             } finally {
@@ -94,6 +93,13 @@ public class BeanProviderHelper {
 
         }
     }
+    
+    /**
+     * Checks if the underlying BeanContainer is started and running. 
+     */
+	private boolean isCdiContainerRunning() {
+		return cdiContainer != null && cdiContainer.getBeanManager() != null;
+	}
     
     /**
      * Fires a {@link ContainerShutdown} CDI event before the CDI container shuts down in order to clean up resources (for example an

@@ -15,7 +15,11 @@
  */
 package info.novatec.beantest.extension;
 
+import info.novatec.beantest.demo.ejb.InvalidInjectionPointConfigurationEJB;
 import info.novatec.beantest.transactions.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.annotation.Resource;
 import javax.ejb.EJB;
@@ -24,16 +28,19 @@ import javax.ejb.Stateless;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AnnotatedField;
+import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
+import javax.enterprise.inject.spi.WithAnnotations;
 import javax.inject.Inject;
 import javax.interceptor.Interceptor;
 import javax.persistence.PersistenceContext;
 
 import org.apache.deltaspike.core.util.metadata.AnnotationInstanceProvider;
 import org.apache.deltaspike.core.util.metadata.builder.AnnotatedTypeBuilder;
+import org.jboss.weld.exceptions.DefinitionException;
 
 /**
  * Extension to modify bean meta data.
@@ -52,20 +59,31 @@ public class BeanTestExtension implements Extension {
      * <p>
      * The ProcessAnnotatedType's meta data will be replaced, if the annotated type has one of the following annotations:
      * <ul>
-     * <li> {@link Stateless}
-     * <li> {@link MessageDriven}
-     * <li>  {@link Interceptor}
+     * <li> {@link Interceptor}
      * </ul>
      *
      * @param <X> the type of the ProcessAnnotatedType
      * @param pat the annotated type representing the class being processed
      */
-    public <X> void processInjectionTarget(@Observes ProcessAnnotatedType<X> pat) {
-        if (pat.getAnnotatedType().isAnnotationPresent(Stateless.class) || pat.getAnnotatedType().isAnnotationPresent(MessageDriven.class)) {
-            modifyAnnotatedTypeMetaData(pat);
-        } else if (pat.getAnnotatedType().isAnnotationPresent(Interceptor.class)) {
-            processInterceptorDependencies(pat);
-        }
+    public <X> void processInterceptorBeans(@Observes @WithAnnotations(Interceptor.class) ProcessAnnotatedType<X> pat) {
+        processInterceptorDependencies(pat);
+    }
+    
+    /**
+     * Replaces the meta data of the {@link ProcessAnnotatedType}.
+     * 
+     * <p>
+     * The ProcessAnnotatedType's meta data will be replaced, if the annotated type has one of the following annotations:
+     * <ul>
+     * <li> {@link Stateless}
+     * <li> {@link MessageDriven}
+     * </ul>
+     *
+     * @param <X> the type of the ProcessAnnotatedType
+     * @param pat the annotated type representing the class being processed
+     */
+    public <X> void processStatelessOrMessagedrivenBeans(@Observes @WithAnnotations({Stateless.class, MessageDriven.class}) ProcessAnnotatedType<X> pat) {
+    	modifyAnnotatedTypeMetaData(pat);
     }
 
     /**
@@ -78,13 +96,14 @@ public class BeanTestExtension implements Extension {
         Transactional transactionalAnnotation = AnnotationInstanceProvider.of(Transactional.class);
         RequestScoped requestScopedAnnotation = AnnotationInstanceProvider.of(RequestScoped.class);
 
-        AnnotatedType at = pat.getAnnotatedType();
+        AnnotatedType<X> at = pat.getAnnotatedType();
         
         AnnotatedTypeBuilder<X> builder = new AnnotatedTypeBuilder<X>().readFromType(at);
         builder.addToClass(transactionalAnnotation).addToClass(requestScopedAnnotation);
 
-        addInjectAnnotation(at, builder);
-        //Set the wrapper instead the actual annotated type
+    	addInjectAnnotation(at, builder);
+
+        /* Replaces the actual annotated type in the processed bean or interceptor with the wrapper. */
         pat.setAnnotatedType(builder.create());
 
     }
@@ -103,48 +122,6 @@ public class BeanTestExtension implements Extension {
         pat.setAnnotatedType(builder.create());
     }
     
-    /**
-     * Returns <code>true</code> if the field is NOT annotated with {@link Inject} and is annotated with one of the following annotations:
-     * <ul>
-     * <li> {@link EJB}
-     * <li> {@link PersistenceContext}
-     * <li> {@link Resource}
-     * </ul>
-     * Otherwise, it returns <code>false</code>.
-     * 
-     * @param <X>
-     *            the type of the annotated field
-     * @param field
-     *            the annotated field whose annotations should be verified
-     * @return <code>true</code> if the field is NOT annotated with {@link Inject} and is annotated with {@link EJB},
-     *         {@link PersistenceContext} or {@link Resource}
-     */
-    private <X> boolean shouldInjectionAnnotationBeAddedToField(AnnotatedField<? super X> field) {
-        return !field.isAnnotationPresent(Inject.class)
-                    && (field.isAnnotationPresent(Resource.class) || field.isAnnotationPresent(EJB.class) || field.isAnnotationPresent(PersistenceContext.class));
-    }
-    
-    /**
-     * Returns <code>true</code> if the method is NOT annotated with {@link Inject} and is annotated with one of the following annotations:
-     * <ul>
-     * <li> {@link EJB}
-     * <li> {@link PersistenceContext}
-     * <li> {@link Resource}
-     * </ul>
-     * Otherwise, it returns <code>false</code>.
-     * 
-     * @param <X>
-     *            the type of the annotated method
-     * @param method
-     *            the annotated method whose annotations should be verified
-     * @return <code>true</code> if the method is NOT annotated with {@link Inject} and is annotated with {@link EJB},
-     *         {@link PersistenceContext} or {@link Resource}
-     */
-    private <X> boolean shouldInjectionAnnotationBeAddedToMethod(AnnotatedMethod<? super X> method) {
-        return !method.isAnnotationPresent(Inject.class)
-                    && (method.isAnnotationPresent(Resource.class) || method.isAnnotationPresent(EJB.class) || method.isAnnotationPresent(PersistenceContext.class));
-    }
-    
      /**
      * Adds the {@link Inject} annotation to the fields and setters of the annotated type if required.
      * 
@@ -154,23 +131,107 @@ public class BeanTestExtension implements Extension {
      *            the annotated type whose fields and setters the inject annotation should be added to
      * @param builder
      *            the builder that should be used to add the annotation.
-     * @see #shouldInjectionAnnotationBeAddedToField(AnnotatedField) and #shouldInjectionAnnotationBeAddedToMethod(AnnotatedMethod)
+     * @see #shouldInjectionAnnotationBeAddedToMember(AnnotatedField) and #shouldInjectionAnnotationBeAddedToMethod(AnnotatedMethod)
      */
     private <X> void addInjectAnnotation(final AnnotatedType<X> annotatedType, AnnotatedTypeBuilder<X> builder) {
-        Inject injectAnnotation = AnnotationInstanceProvider.of(Inject.class);
-        
-        for (AnnotatedField<? super X> field : annotatedType.getFields() ) {
-            if (shouldInjectionAnnotationBeAddedToField(field)) {
-                builder.addToField(field, injectAnnotation);
-            }
+    	new InjectionPointReplacement<X>(annotatedType, builder).performReplacements();
+    }
+   
+    /**
+     * This class is responsible for transforming {@link EJB}, {@link PersistenceContext} or {@link Resource} injection points into correlating {@link Inject} dependency definitions.
+     * <p>
+     * Furthermore this class ensures that the processed bean holds valid dependency injection points for its member i.e. the processed bean may hold exclusively field injection points
+     * or setter injection points for a particular member.
+     * <p>
+     * By way of example the {@link InvalidInjectionPointConfigurationEJB} holds an invalid dependency configuration.  
+     * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
+     *
+     */
+    private static class InjectionPointReplacement<X> {
+    	
+    	private static final String SETTER_METHOD_PREFIX = "set";
+
+    	private static final int FIELD_NAME_INDEX = 1;
+    	
+		private static final Inject INJECT_ANNOTATION = AnnotationInstanceProvider.of(Inject.class);
+
+    	private List<String> processedFieldInjections = new ArrayList<String>();
+    	
+    	private final AnnotatedType<X> annotatedType;
+    	
+    	private final AnnotatedTypeBuilder<X> builder;
+    	
+    	public InjectionPointReplacement(AnnotatedType<X> annotatedType, AnnotatedTypeBuilder<X> builder) {
+    		this.annotatedType = annotatedType;
+    		this.builder = builder;
+    	}
+    
+    	/**
+         * Returns <code>true</code> if the member is NOT annotated with {@link Inject} and is annotated with one of the following annotations:
+         * <ul>
+         * <li> {@link EJB}
+         * <li> {@link PersistenceContext}
+         * <li> {@link Resource}
+         * </ul>
+         * Otherwise, it returns <code>false</code>.
+         * 
+         * @param <X>
+         *            the type of the annotated member
+         * @param member
+         *            the annotated member whose annotations should be verified
+         * @return <code>true</code> if the member is NOT annotated with {@link Inject} and is annotated with {@link EJB},
+         *         {@link PersistenceContext} or {@link Resource}
+         */
+        private boolean shouldInjectionAnnotationBeAddedToMember(AnnotatedMember<? super X> member) {
+            return ! member.isAnnotationPresent(Inject.class) && (member.isAnnotationPresent(Resource.class)
+            		|| member.isAnnotationPresent(EJB.class) || member.isAnnotationPresent(PersistenceContext.class));
         }
-        
-        for (AnnotatedMethod<? super X> method : annotatedType.getMethods()) {
-            if (shouldInjectionAnnotationBeAddedToMethod(method)) {
-            	builder.addToMethod(method, injectAnnotation);
-            }
-        }
-        
+    	
+        /**
+         * This method performs the actual injection point transformation while ensuring that the processed bean comprise a valid dependency configuration.  
+         */
+    	public void performReplacements() {
+		   for (AnnotatedField<? super X> field : annotatedType.getFields()) {
+	             if (shouldInjectionAnnotationBeAddedToMember(field)) {
+	                 builder.addToField(field, INJECT_ANNOTATION);
+	                 processedFieldInjections.add(field.getJavaMember().getName());
+	             }
+	         }
+	      
+	         for (AnnotatedMethod<? super X> method : annotatedType.getMethods()) {
+	            if (shouldInjectionAnnotationBeAddedToMember(method)) {
+	            	validateDependencyConfiguration(method);
+	            	builder.addToMethod(method, INJECT_ANNOTATION);
+	            }
+	        }
+    	}
+
+    	/**
+    	 * Check if there is already a processed field injection point for the corresponding member. If so, the setter injection method for the given member is not legal.
+    	 * The invalid dependency configuration lead towards to a deployment exception. 
+    	 * @param method Represent the suffix-name of the corresponding setter injection method in the processed bean.
+    	 * @throws DefinitionException Occurs if there is already a processed field for the given member.
+    	 */
+		private void validateDependencyConfiguration(AnnotatedMethod<? super X> method) {
+			if(method.getJavaMember().getName().startsWith(SETTER_METHOD_PREFIX)){
+				String methodSuffixName = method.getJavaMember().getName().split(SETTER_METHOD_PREFIX)[FIELD_NAME_INDEX];
+				if(isInjectionPointAlreadyProcessed(methodSuffixName)){
+					throw new DefinitionException(String.format("Invalid dependency definition in declaring class: %s."
+							+ " Found duplicate injection points for method %s and corresponding field", annotatedType, method.getJavaMember().getName()));
+				}
+			}
+		}
+
+		private boolean isInjectionPointAlreadyProcessed(String methodSuffixName) {
+			for (String processedField : processedFieldInjections) {
+				if (processedField.equalsIgnoreCase(methodSuffixName)) {
+					return true;
+				}
+			}
+			
+			return false;
+		}
+    	
     }
 
 }

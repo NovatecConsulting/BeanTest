@@ -58,17 +58,7 @@ public class EntityManagerProducer {
 
     @Produces
     public EntityManager getEntityManager(InjectionPoint ip) {
-        PersistenceContext ctx = ip.getAnnotated().getAnnotation(PersistenceContext.class);
-        
-        if (ctx == null) {
-        	//if @PersisteceContext is declared on method, ctx is null at this point.
-        	//ctx should be retrieved from the Method.
-        	Member member = ip.getMember();
-        	if (member instanceof Method) {
-        		Method method = (Method) member;
-        		ctx = method.getAnnotation(PersistenceContext.class);
-        	}
-        }
+        PersistenceContext ctx = retrievePersistenceContext(ip);
         
         LOGGER.debug("PersistenceContext info:");
         //This could happen if the application injects the EntityManager via @Inject instead of @PersistenceContext
@@ -83,6 +73,23 @@ public class EntityManagerProducer {
             em = emf.createEntityManager();
         }
         return em;
+    }
+    
+    private PersistenceContext retrievePersistenceContext(InjectionPoint injectionPoint) {
+        PersistenceContext ctx = injectionPoint.getAnnotated().getAnnotation(PersistenceContext.class);
+        
+        /**
+         * If @PersisteceContext is declared on method, ctx is null at this point.
+         * ctx should be retrieved from the Method object.
+         */
+        if (ctx == null) {
+        	Member member = injectionPoint.getMember();
+        	if (member instanceof Method) {
+                    Method method = (Method) member;
+                    ctx = method.getAnnotation(PersistenceContext.class);
+        	}
+        }
+        return ctx;
     }
     
     /**
