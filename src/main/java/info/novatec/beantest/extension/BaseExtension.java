@@ -15,127 +15,51 @@
  */
 package info.novatec.beantest.extension;
 
-import info.novatec.beantest.transactions.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.annotation.Resource;
-import javax.ejb.EJB;
-import javax.ejb.MessageDriven;
-import javax.ejb.Stateless;
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.AnnotatedField;
-import javax.enterprise.inject.spi.AnnotatedMember;
-import javax.enterprise.inject.spi.AnnotatedMethod;
-import javax.enterprise.inject.spi.AnnotatedType;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.ProcessAnnotatedType;
-import javax.enterprise.inject.spi.WithAnnotations;
-import javax.inject.Inject;
-import javax.interceptor.Interceptor;
-import javax.persistence.PersistenceContext;
-
 import org.apache.deltaspike.core.util.metadata.AnnotationInstanceProvider;
 import org.apache.deltaspike.core.util.metadata.builder.AnnotatedTypeBuilder;
 import org.jboss.weld.exceptions.DefinitionException;
 
+import javax.annotation.Resource;
+import javax.ejb.EJB;
+import javax.enterprise.inject.spi.*;
+import javax.inject.Inject;
+import javax.persistence.PersistenceContext;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * Extension to modify bean meta data.
+ * Base CDI Extension to modify bean meta data. Provides altogether with various utility methods the essential bean
+ * meta data functionality.
  * <p>
- * This extension adds and changes the bean meta data in order to convert EJB injection points into CDI injection points.
- * Therefore the extension changes the meta data of Beans annotated with {@link EJB}<br>
- * It also changes injection points in interceptors.
- *
+ * <b>Potential new CDI extension should extend BaseExtension and moreover listed in /src/main/resources/META-INF/services/javax.enterprise.inject.spi.Extension</b>
+ * @param <X> the type of the annotated type
  * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
+ * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
  */
-public class BeanTestExtension implements Extension {
+public abstract class BaseExtension<X> implements Extension {
 
-    /**
-     * Replaces the meta data of the {@link ProcessAnnotatedType}.
-     * 
-     * <p>
-     * The ProcessAnnotatedType's meta data will be replaced, if the annotated type has one of the following annotations:
-     * <ul>
-     * <li> {@link Interceptor}
-     * </ul>
-     *
-     * @param <X> the type of the ProcessAnnotatedType
-     * @param pat the annotated type representing the class being processed
-     */
-    public <X> void processInterceptorBeans(@Observes @WithAnnotations(Interceptor.class) ProcessAnnotatedType<X> pat) {
-        processInterceptorDependencies(pat);
-    }
-    
-    /**
-     * Replaces the meta data of the {@link ProcessAnnotatedType}.
-     * 
-     * <p>
-     * The ProcessAnnotatedType's meta data will be replaced, if the annotated type has one of the following annotations:
-     * <ul>
-     * <li> {@link Stateless}
-     * <li> {@link MessageDriven}
-     * </ul>
-     *
-     * @param <X> the type of the ProcessAnnotatedType
-     * @param pat the annotated type representing the class being processed
-     */
-    public <X> void processStatelessOrMessagedrivenBeans(@Observes @WithAnnotations({Stateless.class, MessageDriven.class}) ProcessAnnotatedType<X> pat) {
-    	modifyAnnotatedTypeMetaData(pat);
-    }
-
-    /**
-     * Adds {@link Transactional} and {@link RequestScoped} to the given annotated type and converts
-     * its EJB injection points into CDI injection points (i.e. it adds the {@link Inject})
-     * @param <X> the type of the annotated type
-     * @param pat the process annotated type.
-     */
-    private <X> void modifyAnnotatedTypeMetaData(ProcessAnnotatedType<X> pat) {
-        Transactional transactionalAnnotation = AnnotationInstanceProvider.of(Transactional.class);
-        RequestScoped requestScopedAnnotation = AnnotationInstanceProvider.of(RequestScoped.class);
-
-        AnnotatedType<X> at = pat.getAnnotatedType();
-        
-        AnnotatedTypeBuilder<X> builder = new AnnotatedTypeBuilder<X>().readFromType(at);
-        builder.addToClass(transactionalAnnotation).addToClass(requestScopedAnnotation);
-
-    	addInjectAnnotation(at, builder);
-
-        /* Replaces the actual annotated type in the processed bean or interceptor with the wrapper. */
-        pat.setAnnotatedType(builder.create());
-
-    }
-    
-    /**
-     * Adds {@link Inject} annotation to all the dependencies of the interceptor.
-     * 
-     * @param <X>
-     *            the type of the annotated type
-     * @param pat
-     *            the process annotated type.
-     */
-    private <X> void processInterceptorDependencies(ProcessAnnotatedType<X> pat) {
-        AnnotatedTypeBuilder<X> builder = new AnnotatedTypeBuilder<X>().readFromType(pat.getAnnotatedType());
-        addInjectAnnotation(pat.getAnnotatedType(), builder);
-        pat.setAnnotatedType(builder.create());
-    }
-    
      /**
      * Adds the {@link Inject} annotation to the fields and setters of the annotated type if required.
      * 
-     * @param <X>
-     *            the type of the annotated type
      * @param annotatedType
      *            the annotated type whose fields and setters the inject annotation should be added to
      * @param builder
      *            the builder that should be used to add the annotation.
      * @see #shouldInjectionAnnotationBeAddedToMember(AnnotatedField) and #shouldInjectionAnnotationBeAddedToMethod(AnnotatedMethod)
      */
-    private <X> void addInjectAnnotation(final AnnotatedType<X> annotatedType, AnnotatedTypeBuilder<X> builder) {
+    protected void addInjectAnnotationOnProcessedType(final AnnotatedType<X> annotatedType, AnnotatedTypeBuilder<X> builder) {
     	new InjectionPointReplacement<X>(annotatedType, builder).performReplacements();
     }
-   
+
+    /**
+     * Creates an AnnotatedTypeBuilder from the provided AnnotatedType
+     * @param annotatedType the processed bean
+     * @return AnnotatedTypeBuilder based on annotatedType
+     */
+    protected AnnotatedTypeBuilder<X> createTypeBuilderFrom(AnnotatedType<X> annotatedType) {
+        return new AnnotatedTypeBuilder<X>().readFromType(annotatedType);
+    }
+
     /**
      * This class is responsible for transforming {@link EJB}, {@link PersistenceContext} or {@link Resource} injection points into correlating {@link Inject} dependency definitions.
      * <p>
@@ -174,8 +98,6 @@ public class BeanTestExtension implements Extension {
          * </ul>
          * Otherwise, it returns <code>false</code>.
          * 
-         * @param <X>
-         *            the type of the annotated member
          * @param member
          *            the annotated member whose annotations should be verified
          * @return <code>true</code> if the member is NOT annotated with {@link Inject} and is annotated with {@link EJB},
@@ -183,7 +105,7 @@ public class BeanTestExtension implements Extension {
          */
         private boolean shouldInjectionAnnotationBeAddedToMember(AnnotatedMember<? super X> member) {
             return ! member.isAnnotationPresent(Inject.class) && (member.isAnnotationPresent(Resource.class)
-            		|| member.isAnnotationPresent(EJB.class) || member.isAnnotationPresent(PersistenceContext.class));
+            || member.isAnnotationPresent(EJB.class) || member.isAnnotationPresent(PersistenceContext.class));
         }
     	
         /**
@@ -216,7 +138,8 @@ public class BeanTestExtension implements Extension {
 				String methodSuffixName = method.getJavaMember().getName().split(SETTER_METHOD_PREFIX)[FIELD_NAME_INDEX];
 				if(isInjectionPointAlreadyProcessed(methodSuffixName)){
 					throw new DefinitionException(String.format("Invalid dependency definition in declaring class: %s."
-							+ " Found duplicate injection points for method %s and corresponding field", annotatedType, method.getJavaMember().getName()));
+                    + " Found duplicate injection points for method %s and corresponding field",
+                            annotatedType, method.getJavaMember().getName()));
 				}
 			}
 		}
@@ -227,10 +150,7 @@ public class BeanTestExtension implements Extension {
 					return true;
 				}
 			}
-			
 			return false;
 		}
-    	
     }
-
 }

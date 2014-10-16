@@ -66,7 +66,7 @@ public class EntityManagerProducer {
             LOGGER.debug("Unit name: {}", ctx.unitName());
         }
         
-        LOGGER.debug("Bean defining the injection point: {}", ip.getBean().getBeanClass());
+        LOGGER.debug("Bean defining the injection point: {}", ip.getType());
         LOGGER.debug("Field to be injected: {}", ip.getMember());
 
         if (em == null) {
