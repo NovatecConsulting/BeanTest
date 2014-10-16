@@ -36,6 +36,8 @@ import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.inject.Inject;
 import javax.interceptor.Interceptor;
+import javax.interceptor.InterceptorBinding;
+import javax.interceptor.Interceptors;
 import javax.persistence.PersistenceContext;
 
 import org.apache.deltaspike.core.util.metadata.AnnotationInstanceProvider;
@@ -85,27 +87,138 @@ public class BeanTestExtension implements Extension {
     public <X> void processStatelessOrMessagedrivenBeans(@Observes @WithAnnotations({Stateless.class, MessageDriven.class}) ProcessAnnotatedType<X> pat) {
     	modifyAnnotatedTypeMetaData(pat);
     }
+    
+    /**
+     * Replaces the meta data of the {@link ProcessAnnotatedType}.
+     * 
+     * <p>
+     * The ProcessAnnotatedType's meta data will be replaced, if the annotated type has one of the following annotations:
+     * <ul>
+     * <li> {@link Interceptors}
+     * </ul>
+     *
+     * @param <X> the type of the ProcessAnnotatedType
+     * @param pat the annotated type representing the class being processed
+     */
+    public <X> void processInterceptorsBeans(@Observes @WithAnnotations(Interceptors.class) ProcessAnnotatedType<X> pat) {
+       modifyInterceptorBindings(pat);
+    }
+
+    /**
+     * Mounts the InterceptorBinding {@link InterceptorWrapper} on the processed bean in order to be able to call modified EJB interceptor bindings.
+     * <br> 
+	  * Creates modified {@link AnnotatedType} instances of the corresponding {@link Interceptors} bindings and persist it into {@link InterceptorWrapperImpl}.
+	  * <br>
+	  * Ultimately the origin Interceptors annotation will be replaced with InterceptorWrapper.
+     * @see {@link #modifyInterceptorBindings(AnnotatedType, AnnotatedTypeBuilder)}
+     * @see {@link InterceptorWrapperImpl}
+     * @param pat the processed {@link AnnotatedType}
+     */
+	private <X> void modifyInterceptorBindings(ProcessAnnotatedType<X> pat) {
+		AnnotatedType<X> annotatedType = pat.getAnnotatedType();
+		AnnotatedTypeBuilder<X> typeBuilder = new AnnotatedTypeBuilder<X>().readFromType(annotatedType);
+
+		modifyInterceptorBindings(annotatedType, typeBuilder);
+		pat.setAnnotatedType(typeBuilder.create());
+	}
+
+	/**
+	 * Mounts the InterceptorBinding {@link InterceptorWrapper} on the processed bean in order to be able to call modified EJB interceptor bindings.
+    * <br> 
+    * Creates modified {@link AnnotatedType} instances of the corresponding {@link Interceptors} bindings and persist it into {@link InterceptorWrapperImpl}.
+    * <br>
+    * Ultimately the origin Interceptors annotation will be replaced with InterceptorWrapper.
+	 * @see {@link #modifyInterceptorBindings(ProcessAnnotatedType)}
+	 * @see {@link #getModifiedInterceptorBindings(AnnotatedType)}
+	 * @param annotatedType the processed {@link AnnotatedType}
+	 * @param typeBuilder
+	 */
+	private <X> void modifyInterceptorBindings(AnnotatedType<X> annotatedType, AnnotatedTypeBuilder<X> typeBuilder) {
+		InterceptorWrapper globalInterceptor = AnnotationInstanceProvider.of(InterceptorWrapper.class);
+		typeBuilder.removeFromClass(Interceptors.class);
+		typeBuilder.addToClass(globalInterceptor);
+	
+		InterceptorWrapperImpl.InterceptorWrapperData
+			.addInterceptedClassWithModifiedInterceptorBindings(
+				annotatedType.getJavaClass(),
+				getModifiedInterceptorBindings(annotatedType));
+	}
+
+	/**
+	 * Scans the {@link ProcessAnnotatedType} for potential {@link Interceptors} bindings.
+	 * @param pat the processed {@link AnnotatedType}
+	 * @return true if the processed {@link AnnotatedType} has an {@link Interceptors} binding 
+	 */
+	private <X> boolean isInterceptorsAnnotationPresent(ProcessAnnotatedType<X> pat) {
+		return pat.getAnnotatedType().isAnnotationPresent(Interceptors.class);
+	}
+    
+	/**
+	 * Modifies the interceptor bindings i.e. injection points of the provided {@link AnnotatedType}.
+	 * In order to cut unneeded interceptor modifications, the modified interceptor bindings will be stored inside a cache in {@link InterceptorWrapperImpl}.
+	 * <br>
+	 * <br>
+	 * <b>@SuppressWarnings</b>: this method suppresses the following warnings types: rawtypes and unhecked due the fact that the retrieval of the interceptor bindings
+	 * via {@link Interceptors#value()} forces to use raw type {@link Class} objects. 
+	 * @param annotatedType the processed {@link AnnotatedType}
+	 * @return list of modified interceptor bindings
+	 */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+   	private <X> List<AnnotatedType> getModifiedInterceptorBindings(AnnotatedType<X> annotatedType) {
+       	Interceptors inteceptorsAnnotation = annotatedType.getAnnotation(Interceptors.class);
+       	Class[] interceptorBindings = inteceptorsAnnotation.value();
+       	List<AnnotatedType> modifiedInterceptorClasses = new ArrayList<AnnotatedType>();
+       	
+   		for (int i = 0; i < interceptorBindings.length; i++) {
+   			Class originInterceptor = interceptorBindings[i];
+   			
+   			if (InterceptorWrapperImpl.InterceptorWrapperData.isInterceptorAlreadyModified(originInterceptor)) {
+   				modifiedInterceptorClasses.add(InterceptorWrapperImpl.InterceptorWrapperData
+   						.getModifiedInterceptorFor(originInterceptor));
+			} else {
+				AnnotatedTypeBuilder typeBuilder = new AnnotatedTypeBuilder().readFromType(originInterceptor);
+	   			AnnotatedType modifiedInterceptor = typeBuilder.create();
+	   			
+   			addInjectAnnotation(modifiedInterceptor, typeBuilder);
+				modifiedInterceptorClasses.add(modifiedInterceptor);
+				InterceptorWrapperImpl.InterceptorWrapperData.addOriginInterceptorWithModifiedInterceptor(originInterceptor, modifiedInterceptor);
+			}
+			
+   		}
+   		
+   		return modifiedInterceptorClasses;
+    }
 
     /**
      * Adds {@link Transactional} and {@link RequestScoped} to the given annotated type and converts
      * its EJB injection points into CDI injection points (i.e. it adds the {@link Inject})
+     * <br>
+     * Further modifies the interceptor bindings if the given {@link AnnotatedType} holds an {@link Interceptors} annotation.
+     * The modified interceptor bindings will be backed on the processed {@link AnnotatedType} via a custom {@link InterceptorBinding} interceptor: {@link InterceptorWrapper}.
      * @param <X> the type of the annotated type
      * @param pat the process annotated type.
+     * @see {@link #modifyInterceptorBindings(ProcessAnnotatedType)}
+     * @see {@link InterceptorWrapper}
      */
     private <X> void modifyAnnotatedTypeMetaData(ProcessAnnotatedType<X> pat) {
         Transactional transactionalAnnotation = AnnotationInstanceProvider.of(Transactional.class);
         RequestScoped requestScopedAnnotation = AnnotationInstanceProvider.of(RequestScoped.class);
 
-        AnnotatedType<X> at = pat.getAnnotatedType();
+        AnnotatedType<X> annotatedType = pat.getAnnotatedType();
         
-        AnnotatedTypeBuilder<X> builder = new AnnotatedTypeBuilder<X>().readFromType(at);
+        AnnotatedTypeBuilder<X> builder = new AnnotatedTypeBuilder<X>().readFromType(annotatedType);
         builder.addToClass(transactionalAnnotation).addToClass(requestScopedAnnotation);
 
-    	addInjectAnnotation(at, builder);
+    	  addInjectAnnotation(annotatedType, builder);
 
         /* Replaces the actual annotated type in the processed bean or interceptor with the wrapper. */
+        if(isInterceptorsAnnotationPresent(pat)) {
+        	modifyInterceptorBindings(annotatedType, builder);
+        }
+        
+        addInjectAnnotation(annotatedType, builder);
+        //Set the wrapper instead the actual annotated type
         pat.setAnnotatedType(builder.create());
-
     }
     
     /**

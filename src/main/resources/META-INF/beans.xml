@@ -6,6 +6,7 @@
 
     <interceptors>
         <class>info.novatec.beantest.transactions.TransactionalInterceptor</class>
+        <class>info.novatec.beantest.extension.InterceptorWrapperImpl</class>
     </interceptors> 
-
+	
 </beans>
