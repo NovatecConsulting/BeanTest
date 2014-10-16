@@ -27,7 +27,7 @@ look undistinguishable too.
 **Production ready**
 
 BeanTest is currently being used in some (big) customer projects. The projects are big Java EE Applications with several subsystems (.ear's). Each subsystem consists of several modules (.jar's) as well. We haven't faced any critical problem. Usually one can fix a problem by using standard CDI features.
-. 
+
 **Examples**
 
 You can find the examples about how a "Bean" test looks like under
