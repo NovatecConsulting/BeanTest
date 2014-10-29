@@ -15,7 +15,6 @@
  */
 package info.novatec.beantest.extension;
 
-import info.novatec.beantest.demo.ejb.InvalidInjectionPointConfigurationEJB;
 import info.novatec.beantest.transactions.Transactional;
 
 import java.util.ArrayList;
