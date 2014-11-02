@@ -45,29 +45,29 @@ import javax.interceptor.InvocationContext;
  */
 @InterceptorWrapper
 @Interceptor
-@SuppressWarnings(value = {"rawtypes", "unchecked"})
+@SuppressWarnings(value = {"rawtypes", "unchecked", "JavadocReference"})
 class InterceptorWrapperImpl {
 
 	@Inject BeanManager beanManager;
 	
 	/**
 	 * Proxies the @AroundInvoke call on an EJB via internally held (modified) InterceptorBindings. The origin method call will be delegated to the corresponding modified Interceptor instance. 
-	 * @param invocationContext
-	 * @return the origin {@link InvocationContext}
+	 * @param invocationContext the origin {@link InvocationContext}
+	 * @return if the invoked modified interceptor returns a result then result will be returned otherwise the origin {@link InvocationContext} will be returned.
 	 */
 	@AroundInvoke
 	public Object handleAroundInvokeInterception(InvocationContext invocationContext) {
-		Class interceptedClazz = retrieveInterceptedClazzFor(invocationContext);
-		if(interceptorBindingsExistsFor(interceptedClazz)) {
+        Object alteredInvocationContext = null;
+        Class interceptedClazz = retrieveInterceptedClazzFor(invocationContext);
+        if(interceptorBindingsExistsFor(interceptedClazz)) {
 			for (AnnotatedType annotatedType : InterceptorWrapperData.MODIFIED_INTERCEPTOR_BINDINGS.get(interceptedClazz)) {
 				InjectionTarget injectionTarget = beanManager.createInjectionTarget(annotatedType);
 				Object injectedInterceptorInstance = instantiateInterceptorInstanceIn(injectionTarget);
-				delegateInterceptorCall(injectedInterceptorInstance, invocationContext);
+                alteredInvocationContext = delegateInterceptorCall(injectedInterceptorInstance, invocationContext);
 				destroyInjectionTarget(injectedInterceptorInstance, injectionTarget);
 			}
 		}
-		
-		return invocationContext;
+		return (alteredInvocationContext != null) ? alteredInvocationContext : invocationContext;
 	}
 
 	/**
@@ -99,19 +99,23 @@ class InterceptorWrapperImpl {
 	 * Call the Interceptor point cut @AroundInvoke on the modified Interceptor instance.
 	 * @param annotatedTypeInstance the container produced Interceptor instance
 	 * @param invocationContext the origin {@link InvocationContext}
+     * @return if the interceptor invocation comprises a result then the result will be returned.
+     * Otherwise the origin {@link InvocationContext} will be returned
 	 */
-	private void delegateInterceptorCall(Object annotatedTypeInstance,
+	private Object delegateInterceptorCall(Object annotatedTypeInstance,
 			InvocationContext invocationContext) {
 		for (Method method : annotatedTypeInstance.getClass().getMethods()) {
 			if (method.isAnnotationPresent(AroundInvoke.class)) {
 				try {
-					method.invoke(annotatedTypeInstance, invocationContext);
+                    Object invocationResult = method.invoke(annotatedTypeInstance, invocationContext);
+                    if (invocationResult != null) return invocationResult;
 				} catch (Exception e) {
 					throw new RuntimeException(e);
 				}
 			}
-		}
-	}
+        }
+        return invocationContext;
+    }
 
 	private boolean interceptorBindingsExistsFor(Class interceptedClazz) {
 		return InterceptorWrapperData.MODIFIED_INTERCEPTOR_BINDINGS.containsKey(interceptedClazz);
