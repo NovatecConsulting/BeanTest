@@ -17,7 +17,6 @@
 package info.novatec.beantest.demo.ejb;
 
 import info.novatec.beantest.api.BaseBeanTest;
-import info.novatec.beantest.extension.BeanTestExtension;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -25,21 +24,21 @@ import org.junit.Test;
 /**
  * This test verifies that EJBs with EJB interceptor bindings are processed correctly by BeanTestExtension.
  * @see InterceptorWrapperImpl
- * @see BeanTestExtension
+ * @see info.novatec.beantest.extension.BaseExtension
  * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
  * 
  */
 public class TestInterceptedBean extends BaseBeanTest {
 
 	@Test
-	public void shouldInjectDependenciesInSurroundingInterceptor() {
+	public void shouldInjectDependenciesInSurroundingInterceptorOnStatelessBean() {
 		MyInterceptedStatelessBean bean = getBean(MyInterceptedStatelessBean.class);
 		Assert.assertNotNull(bean);
 		bean.businessMethod();
 	}
 	
 	@Test
-	public void shouldInjectDependenciesInSurroundingInterceptorToo() {
+	public void shouldInjectDependenciesInSurroundingInterceptorOnDefaultScopedBean() {
 		MyInterceptedDefaultScopeBean bean = getBean(MyInterceptedDefaultScopeBean.class);
 		Assert.assertNotNull(bean);
 		bean.businessMethod();

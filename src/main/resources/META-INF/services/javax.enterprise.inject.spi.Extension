@@ -1,1 +1,2 @@
-info.novatec.beantest.extension.BeanTestExtension
+info.novatec.beantest.extension.InterceptorExtension
+info.novatec.beantest.extension.EJBExtension

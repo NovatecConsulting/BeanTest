@@ -17,7 +17,6 @@
 package info.novatec.beantest.demo.ejb;
 
 import info.novatec.beantest.api.BaseBeanTest;
-import info.novatec.beantest.extension.BeanTestExtension;
 
 import org.jboss.weld.exceptions.DefinitionException;
 import org.jboss.weld.exceptions.DeploymentException;
@@ -25,8 +24,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 /**
- * This test stress the correct deployment functionality of {@link BeanTestExtension} regarding injection point definitions of an given EJB.
- * Due the fact that the injected bean holds an invalid dependency configuration {@link BeanTestExtension} will throw an {@link DeploymentException}.
+ * This test stress the correct deployment functionality of {@link info.novatec.beantest.extension.BaseExtension} regarding injection point definitions of an given EJB.
+ * Due the fact that the injected bean holds an invalid dependency configuration {@link info.novatec.beantest.extension.BaseExtension} will throw an {@link DeploymentException}.
  * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
  * @see https://github.com/NovaTecConsulting/BeanTest/pull/6
  */

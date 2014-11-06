@@ -33,14 +33,14 @@ import javax.interceptor.InvocationContext;
 
 /**
  * {@link InterceptorWrapperImpl} proxies Interceptor (e.g. @AroundInvoke) pointcuts via modified Interceptor instances i.e. the modification here relates to the
- * injection point transformation based in {@link BeanTestExtension}.
+ * injection point transformation based in {@link BaseExtension}.
  * <br> 
  * <br> 
  * <b>@SuppressWarnings</b>: this method suppresses the following warnings types: rawtypes and unhecked due the fact
  * that the retrieval of the interceptor bindings
  * via {@link Interceptors#value()} forces to use raw type {@link Class} objects. 
  * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
- * @see BeanTestExtension
+ * @see BaseExtension
  * @see https://docs.jboss.org/weld/reference/latest/en-US/html/extend.html#_the_literal_injectiontarget_literal_interface
  */
 @InterceptorWrapper
