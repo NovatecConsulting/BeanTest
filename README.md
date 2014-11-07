@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/NovaTecConsulting/BeanTest.svg?branch=master)](https://travis-ci.org/NovaTecConsulting/BeanTest)
+
 # Bean Testing for Java EE Applications using CDI
 
 This project attempts to show an interesting approach on testing Java EE
