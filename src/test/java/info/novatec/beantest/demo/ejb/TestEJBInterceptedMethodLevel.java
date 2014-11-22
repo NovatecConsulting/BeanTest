@@ -18,23 +18,18 @@
 
 package info.novatec.beantest.demo.ejb;
 
-import info.novatec.beantest.demo.entities.MyEntity;
+import info.novatec.beantest.api.BaseBeanTest;
+import org.junit.Test;
 
-import javax.inject.Inject;
-import javax.interceptor.AroundInvoke;
-import javax.interceptor.InvocationContext;
-import javax.persistence.EntityManager;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.*;
 
-/**
- * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
- */
-public class MyExcludedInterceptor {
+public class TestEJBInterceptedMethodLevel extends BaseBeanTest {
 
-    static boolean isCalled;
-
-    @AroundInvoke
-    public Object handle(InvocationContext context) throws Exception {
-        isCalled = true;
-        return context.proceed();
+    @Test
+    public void business_service_call_should_trigger_method_level_interception() throws Exception {
+        EJBInterceptedMethodLevel ejbInterceptedMethodLevel = getBean(EJBInterceptedMethodLevel.class);
+        ejbInterceptedMethodLevel.businessService();
+        assertThat(MyMethodLevelInterceptor.isInvoked, is(true));
     }
 }

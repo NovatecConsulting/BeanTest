@@ -38,6 +38,6 @@ import javax.interceptor.Interceptors;
  */
 @InterceptorBinding
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
+@Target(value = {ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR})
 @interface InterceptorWrapper {
 }

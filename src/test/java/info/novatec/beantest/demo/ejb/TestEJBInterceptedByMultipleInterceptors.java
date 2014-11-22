@@ -29,7 +29,7 @@ import org.junit.Test;
 public class TestEJBInterceptedByMultipleInterceptors extends BaseBeanTest {
 
     @Test
-    public void test() {
+    public void business_service_call_should_invoke_surrounding_interceptors() {
         EJBInterceptedByMultipleInterceptors bean = getBean(EJBInterceptedByMultipleInterceptors.class);
         bean.business();
         assertThat(bean.getPersistedEntitiesCount(), is(4));

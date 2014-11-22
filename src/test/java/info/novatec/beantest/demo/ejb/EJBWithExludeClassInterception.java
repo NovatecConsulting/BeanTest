@@ -18,15 +18,9 @@
 
 package info.novatec.beantest.demo.ejb;
 
-import info.novatec.beantest.demo.entities.MyEntity;
-
 import javax.ejb.Stateless;
 import javax.interceptor.ExcludeClassInterceptors;
 import javax.interceptor.Interceptors;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
 
 /**
  * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
@@ -35,14 +29,7 @@ import javax.persistence.criteria.Root;
 @Interceptors(MyExcludedInterceptor.class)
 public class EJBWithExludeClassInterception {
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
     @ExcludeClassInterceptors
-    public int business() {
-        CriteriaQuery<MyEntity> createQuery = entityManager.getCriteriaBuilder().createQuery(MyEntity.class);
-        Root<MyEntity> from = createQuery.from(MyEntity.class);
-        CriteriaQuery<MyEntity> select = createQuery.select(from);
-        return entityManager.createQuery(select).getResultList().size();
+    public void business() {
     }
 }

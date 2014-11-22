@@ -27,13 +27,14 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.InjectionTarget;
 import javax.inject.Inject;
 import javax.interceptor.*;
+import javax.smartcardio.ATR;
 
 /**
- * {@link InterceptorWrapperImpl} proxies Interceptor (e.g. @AroundInvoke) pointcuts via modified Interceptor instances i.e. the modification here relates to the
- * injection point transformation based in {@link BaseExtension}.
+ * {@link InterceptorWrapperImpl} proxies Interceptor (e.g. @AroundInvoke) pointcuts via modified Interceptor instances
+ * i.e. the modification here relates to the injection point transformation based in {@link BaseExtension}.
  * <br> 
  * <br> 
- * <b>@SuppressWarnings</b>: this method suppresses the following warnings types: rawtypes and unhecked due the fact
+ * <b>@SuppressWarnings</b>: this method suppresses the following warnings types: rawtypes and unchecked due the fact
  * that the retrieval of the interceptor bindings
  * via {@link Interceptors#value()} forces to use raw type {@link Class} objects. 
  * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
@@ -43,28 +44,44 @@ import javax.interceptor.*;
 @InterceptorWrapper
 @Interceptor
 @SuppressWarnings(value = {"rawtypes", "unchecked", "JavadocReference"})
-class InterceptorWrapperImpl {
+//TODO rename me
+class InterceptorWrapperImpl  {
 
 	@Inject BeanManager beanManager;
 	
 	/**
-	 * Proxies the @AroundInvoke call on an EJB via internally held (modified) InterceptorBindings. The origin method call will be delegated to the corresponding modified Interceptor instance. 
+	 * Proxies the @AroundInvoke call on an EJB via internally held (modified) InterceptorBindings.
+     * The origin method call will be delegated to the corresponding modified Interceptor instance.
 	 * @param invocationContext the origin {@link InvocationContext}
-	 * @return if the invoked modified interceptor returns a result then result will be returned otherwise the origin {@link InvocationContext} will be returned.
+	 * @return if the invoked modified interceptor returns a result then result will be returned otherwise the origin
+     * {@link InvocationContext} will be returned.
 	 */
 	@AroundInvoke
 	public Object handleAroundInvokeInterception(InvocationContext invocationContext) throws Exception {
         Object alteredInvocationContext = null;
         Class interceptedClazz = retrieveInterceptedClazzFor(invocationContext);
+        //TODO Testcase: EJB mit excluded und methodlevel interceptorbinding
         if(! interceptedMethodExcludesInterception(invocationContext) && interceptorBindingsExistsFor(interceptedClazz)) {
-			for (AnnotatedType annotatedType : InterceptorWrapperData.MODIFIED_INTERCEPTOR_BINDINGS.get(interceptedClazz)) {
-				InjectionTarget injectionTarget = beanManager.createInjectionTarget(annotatedType);
-				Object injectedInterceptorInstance = instantiateInterceptorInstanceIn(injectionTarget);
+
+            if(InterceptorWrapperData.MODIFIED_CLASS_INTERCEPTOR_BINDINGS.containsKey(interceptedClazz))
+            for (AnnotatedType annotatedType : InterceptorWrapperData.MODIFIED_CLASS_INTERCEPTOR_BINDINGS.get(interceptedClazz)) {
+                InjectionTarget injectionTarget = beanManager.createInjectionTarget(annotatedType);
+                Object injectedInterceptorInstance = instantiateInterceptorInstanceIn(injectionTarget);
                 alteredInvocationContext = delegateInterceptorCall(injectedInterceptorInstance, invocationContext);
-				destroyInjectionTarget(injectedInterceptorInstance, injectionTarget);
-			}
-		}
-		return (alteredInvocationContext != null) ? alteredInvocationContext : invocationContext.proceed();
+                destroyInjectionTarget(injectedInterceptorInstance, injectionTarget);
+            }
+
+            Map<Method, List<AnnotatedType>> methodListMap = InterceptorWrapperData.MODIFIED_METHOD_INTERCEPTOR_BINDINGS.get(interceptedClazz);
+            if (methodListMap != null && methodListMap.containsKey(invocationContext.getMethod())) {
+                for (AnnotatedType annotatedType : methodListMap.get(invocationContext.getMethod())) {
+                    InjectionTarget injectionTarget = beanManager.createInjectionTarget(annotatedType);
+                    Object injectedInterceptorInstance = instantiateInterceptorInstanceIn(injectionTarget);
+                    alteredInvocationContext = delegateInterceptorCall(injectedInterceptorInstance, invocationContext);
+                    destroyInjectionTarget(injectedInterceptorInstance, injectionTarget);
+                }
+            }
+        }
+        return (alteredInvocationContext != null) ? alteredInvocationContext : invocationContext.proceed();
 	}
 
     private boolean interceptedMethodExcludesInterception(InvocationContext invocationContext) {
@@ -119,7 +136,8 @@ class InterceptorWrapperImpl {
     }
 
 	private boolean interceptorBindingsExistsFor(Class interceptedClazz) {
-		return InterceptorWrapperData.MODIFIED_INTERCEPTOR_BINDINGS.containsKey(interceptedClazz);
+		return InterceptorWrapperData.MODIFIED_CLASS_INTERCEPTOR_BINDINGS.containsKey(interceptedClazz) ||
+                InterceptorWrapperData.MODIFIED_METHOD_INTERCEPTOR_BINDINGS.containsKey(interceptedClazz);
 	}
 
 	private Class<?> retrieveInterceptedClazzFor(InvocationContext invocationContext) {
@@ -130,23 +148,29 @@ class InterceptorWrapperImpl {
 	 * Represents the storage location of the modified InterceptorBindings.
 	 * <br>
 	 * <br>
-	 * The <b>key</b> in {@link #MODIFIED_INTERCEPTOR_BINDINGS} represents the processed EJB class.
+	 * The <b>key</b> in {@link #MODIFIED_CLASS_INTERCEPTOR_BINDINGS} represents the processed EJB class.
 	 * <br>
-	 * The <b>value</b> in {@link #MODIFIED_INTERCEPTOR_BINDINGS} represents modified InterceptorBindings.
+	 * The <b>value</b> in {@link #MODIFIED_CLASS_INTERCEPTOR_BINDINGS} represents modified InterceptorBindings.
 	 * <br> 
 	 * <br> 
-	 * {@link InterceptorWrapperData} also holds a cache of modified Interceptor (AnnotatedType) instances in {@link #PROCESSED_INTERCEPTOR_TYPES_CACHE}.
+	 * {@link InterceptorWrapperData} also holds a cache of modified Interceptor (AnnotatedType) instances in
+     * {@link #PROCESSED_INTERCEPTOR_TYPES_CACHE}.
 	 * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
 	 *
 	 */
+    //TODO rename methods and classname
 	static class InterceptorWrapperData {
-		private static final Map<Class, List<AnnotatedType>> MODIFIED_INTERCEPTOR_BINDINGS = new HashMap<Class, List<AnnotatedType>>();
+		private static final Map<Class, List<AnnotatedType>> MODIFIED_CLASS_INTERCEPTOR_BINDINGS = new HashMap<Class, List<AnnotatedType>>();
+		private static final Map<Class, Map<Method, List<AnnotatedType>>> MODIFIED_METHOD_INTERCEPTOR_BINDINGS =
+                new HashMap<Class, Map<Method, List<AnnotatedType>>>();
 		private static final Map<Class, AnnotatedType> PROCESSED_INTERCEPTOR_TYPES_CACHE = new HashMap<Class, AnnotatedType>();
-		
+
+        //TODO already contains interceptorbinding for class level interceptors, when saving method level interceptor
+        //TODO order of invocations: class level vs ctor and method level -> JSR
 		static void addInterceptedClassWithModifiedInterceptorBindings(Class interceptedClazz,
 				List<AnnotatedType> modifiedInterceptorBindings) {
-			if(! MODIFIED_INTERCEPTOR_BINDINGS.containsKey(interceptedClazz)) {
-				MODIFIED_INTERCEPTOR_BINDINGS.put(interceptedClazz, modifiedInterceptorBindings);
+			if(! MODIFIED_CLASS_INTERCEPTOR_BINDINGS.containsKey(interceptedClazz)) {
+				MODIFIED_CLASS_INTERCEPTOR_BINDINGS.put(interceptedClazz, modifiedInterceptorBindings);
 			}
 		}
 
@@ -164,5 +188,10 @@ class InterceptorWrapperImpl {
 				PROCESSED_INTERCEPTOR_TYPES_CACHE.put(originInterceptor, processedInterceptorType);
 			}
 		}
-	}
+
+        public static void addInterceptedClassWithModifiedMethodInterceptorBindings(
+                Class originInterceptor, Map<Method, List<AnnotatedType>> processedInterceptorsMethods) {
+            MODIFIED_METHOD_INTERCEPTOR_BINDINGS.put(originInterceptor, processedInterceptorsMethods);
+        }
+    }
 }

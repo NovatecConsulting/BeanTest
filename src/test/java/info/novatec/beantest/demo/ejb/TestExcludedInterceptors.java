@@ -23,6 +23,8 @@ import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+
 /**
  * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
  */
@@ -31,6 +33,7 @@ public class TestExcludedInterceptors extends BaseBeanTest {
     @Test
     public void shouldNotInvokeSurroundingInterceptor() {
         EJBWithExludeClassInterception ejbWithExludeClassInterception = getBean(EJBWithExludeClassInterception.class);
-        Assert.assertThat(ejbWithExludeClassInterception.business(), CoreMatchers.is(0));
+        ejbWithExludeClassInterception.business();
+        Assert.assertThat(MyExcludedInterceptor.isCalled, is(false));
     }
 }

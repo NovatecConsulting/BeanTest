@@ -31,7 +31,8 @@ import java.util.List;
  * Base CDI Extension to modify bean meta data. Provides altogether with various utility methods the essential bean
  * meta data functionality.
  * <p>
- * <b>Potential new CDI extension should extend BaseExtension and moreover listed in /src/main/resources/META-INF/services/javax.enterprise.inject.spi.Extension</b>
+ * <b>Potential new CDI extension should extend BaseExtension and moreover listed
+ * in /src/main/resources/META-INF/services/javax.enterprise.inject.spi.Extension</b>
  * @param <X> the type of the annotated type
  * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
@@ -56,8 +57,8 @@ public abstract class BaseExtension<X> implements Extension {
      * @param annotatedType the processed bean
      * @return AnnotatedTypeBuilder based on annotatedType
      */
-    protected AnnotatedTypeBuilder<X> createTypeBuilderFrom(AnnotatedType<X> annotatedType) {
-        return new AnnotatedTypeBuilder<X>().readFromType(annotatedType);
+    protected AnnotatedTypeBuilder<X> createTypeBuilderFromProcessedType(ProcessAnnotatedType<X> annotatedType) {
+        return new AnnotatedTypeBuilder<X>().readFromType(annotatedType.getAnnotatedType());
     }
 
     /**

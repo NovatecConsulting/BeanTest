@@ -70,7 +70,7 @@ public class EJBExtension<X> extends BaseExtension<X> {
         RequestScoped requestScopedAnnotation = AnnotationInstanceProvider.of(RequestScoped.class);
 
         AnnotatedType<X> annotatedType = pat.getAnnotatedType();
-        AnnotatedTypeBuilder<X> builder = createTypeBuilderFrom(annotatedType);
+        AnnotatedTypeBuilder<X> builder = createTypeBuilderFromProcessedType(pat);
         builder.addToClass(transactionalAnnotation).addToClass(requestScopedAnnotation);
         addInjectAnnotationOnProcessedType(annotatedType, builder);
         pat.setAnnotatedType(builder.create());

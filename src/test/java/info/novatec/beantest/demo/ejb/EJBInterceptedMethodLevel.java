@@ -18,23 +18,13 @@
 
 package info.novatec.beantest.demo.ejb;
 
-import info.novatec.beantest.demo.entities.MyEntity;
+import javax.ejb.Stateless;
+import javax.interceptor.Interceptors;
 
-import javax.inject.Inject;
-import javax.interceptor.AroundInvoke;
-import javax.interceptor.InvocationContext;
-import javax.persistence.EntityManager;
+@Stateless
+public class EJBInterceptedMethodLevel {
 
-/**
- * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
- */
-public class MyExcludedInterceptor {
-
-    static boolean isCalled;
-
-    @AroundInvoke
-    public Object handle(InvocationContext context) throws Exception {
-        isCalled = true;
-        return context.proceed();
+    @Interceptors(MyMethodLevelInterceptor.class)
+    public void businessService() {
     }
 }
