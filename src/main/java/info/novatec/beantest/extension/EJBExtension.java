@@ -50,7 +50,7 @@ public class EJBExtension<X> extends BaseExtension<X> {
      *
      * @param pat the annotated type representing the class being processed
      */
-    public void processStatelessOrMessagedrivenBeans(
+    public void processStatelessAndMessageDrivenBeans(
             @Observes @WithAnnotations({Stateless.class, MessageDriven.class}) ProcessAnnotatedType<X> pat) {
         modifyAnnotatedTypeMetaData(pat);
     }

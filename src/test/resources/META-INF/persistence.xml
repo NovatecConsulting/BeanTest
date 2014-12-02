@@ -8,8 +8,8 @@
     
     <persistence-unit name="beanTestPU" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
-        <class>info.novatec.beantest.demo.entities.MyEntity</class>
-        <class>info.novatec.beantest.demo.entities.MyEntityWithConstraints</class>
+        <class>info.novatec.beantest.utils.entities.MyEntity</class>
+        <class>info.novatec.beantest.utils.entities.MyEntityWithConstraints</class>
         <properties>
             <property name="javax.persistence.jdbc.url" value="jdbc:derby:memory:myDB;create=true"/>
             <property name="javax.persistence.jdbc.driver" value="org.apache.derby.jdbc.EmbeddedDriver"/>
