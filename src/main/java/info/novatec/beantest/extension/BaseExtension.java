@@ -25,7 +25,9 @@ import javax.enterprise.inject.spi.*;
 import javax.inject.Inject;
 import javax.persistence.PersistenceContext;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Base CDI Extension to modify bean meta data. Provides altogether with various utility methods the essential bean
@@ -39,32 +41,70 @@ import java.util.List;
  */
 public abstract class BaseExtension<X> implements Extension {
 
-     /**
+    protected ProcessAnnotatedType<X> processAnnotatedType;
+
+    private final Map<Class, AnnotatedType> interceptorWrapperCache = new HashMap<Class, AnnotatedType>();
+
+    /**
      * Adds the {@link Inject} annotation to the fields and setters of the annotated type if required.
      * 
      * @param annotatedType
-     *            the annotated type whose fields and setters the inject annotation should be added to
      * @param builder
      *            the builder that should be used to add the annotation.
      * @see #shouldInjectionAnnotationBeAddedToMember(AnnotatedField) and #shouldInjectionAnnotationBeAddedToMethod(AnnotatedMethod)
      */
-    protected void addInjectAnnotationOnProcessedType(final AnnotatedType<X> annotatedType, AnnotatedTypeBuilder<X> builder) {
+    protected void addInjectAnnotationInAnnotatedType(final AnnotatedType<X> annotatedType,
+      final AnnotatedTypeBuilder<X> builder) {
     	new InjectionPointReplacement<X>(annotatedType, builder).performReplacements();
     }
 
     /**
      * Creates an AnnotatedTypeBuilder from the provided AnnotatedType
-     * @param annotatedType the processed bean
      * @return AnnotatedTypeBuilder based on annotatedType
      */
-    protected AnnotatedTypeBuilder<X> createTypeBuilderFromProcessedType(ProcessAnnotatedType<X> annotatedType) {
-        return new AnnotatedTypeBuilder<X>().readFromType(annotatedType.getAnnotatedType());
+    protected AnnotatedTypeBuilder<X> createTypeBuilderFromProcessedType() {
+        return new AnnotatedTypeBuilder<X>().readFromType(getAnnotatedTypeFromProcessedType());
     }
 
     /**
-     * This class is responsible for transforming {@link EJB}, {@link PersistenceContext} or {@link Resource} injection points into correlating {@link Inject} dependency definitions.
+     * Retrieves the {@link javax.enterprise.inject.spi.AnnotatedType} from the processed AnnotatedType
+     * @return AnnotatedType of the processed AnnotatedType
+     */
+    protected AnnotatedType<X> getAnnotatedTypeFromProcessedType() {
+        return processAnnotatedType.getAnnotatedType();
+    }
+
+    /**
+     * Returns Java class of underlying processAnnotatedType
+     * @return Java class of underlying processAnnotatedType
+     */
+    protected Class<X> getJavaClassFromProcessedTyped() {
+        return processAnnotatedType.getAnnotatedType().getJavaClass();
+    }
+
+    /**
+     * Adds the {@link Inject} annotation to the fields and setters of the raw Class if required.
+     * @param rawClazz Class to be altered
+     * @return an Instance of AnnotatedType
+     */
+    protected AnnotatedType addInjectAnnotationInRawClass(Class rawClazz) {
+        if (interceptorWrapperCache.containsKey(rawClazz)) {
+            return interceptorWrapperCache.get(rawClazz);
+        } else {
+            AnnotatedTypeBuilder typeBuilder = new AnnotatedTypeBuilder().readFromType(rawClazz);
+            AnnotatedType annotatedType = typeBuilder.create();
+            addInjectAnnotationInAnnotatedType(annotatedType, typeBuilder);
+            interceptorWrapperCache.put(rawClazz, annotatedType);
+            return annotatedType;
+        }
+    }
+
+    /**
+     * This class is responsible for transforming {@link EJB}, {@link PersistenceContext} or {@link Resource} injection
+     * points into correlating {@link Inject} dependency definitions.
      * <p>
-     * Furthermore this class ensures that the processed bean holds valid dependency injection points for its member i.e. the processed bean may hold exclusively field injection points
+     * Furthermore this class ensures that the processed bean holds valid dependency injection points for its member
+     * i.e. the processed bean may hold exclusively field injection points
      * or setter injection points for a particular member.
      * <p>
      * By way of example the {@link InvalidInjectionPointConfigurationEJB} holds an invalid dependency configuration.  
@@ -135,17 +175,23 @@ public abstract class BaseExtension<X> implements Extension {
     	 * @throws DefinitionException Occurs if there is already a processed field for the given member.
     	 */
 		private void validateDependencyConfiguration(AnnotatedMethod<? super X> method) {
-			if(method.getJavaMember().getName().startsWith(SETTER_METHOD_PREFIX)){
-				String methodSuffixName = method.getJavaMember().getName().split(SETTER_METHOD_PREFIX)[FIELD_NAME_INDEX];
-				if(isInjectionPointAlreadyProcessed(methodSuffixName)){
-					throw new DefinitionException(String.format("Invalid dependency definition in declaring class: %s."
-                    + " Found duplicate injection points for method %s and corresponding field",
+            final String invalidDependencyConfiguration = "Invalid dependency definition in declaring class: %s."
+                    + " Found duplicate injection points for method %s and corresponding field";
+
+            if(method.getJavaMember().getName().startsWith(SETTER_METHOD_PREFIX)){
+                String methodSuffixName = getMethodSuffixName(method);
+                if(isInjectionPointAlreadyProcessed(methodSuffixName)){
+                    throw new DefinitionException(String.format(invalidDependencyConfiguration,
                             annotatedType, method.getJavaMember().getName()));
 				}
 			}
 		}
 
-		private boolean isInjectionPointAlreadyProcessed(String methodSuffixName) {
+        private String getMethodSuffixName(AnnotatedMethod<? super X> method) {
+            return method.getJavaMember().getName().split(SETTER_METHOD_PREFIX)[FIELD_NAME_INDEX];
+        }
+
+        private boolean isInjectionPointAlreadyProcessed(String methodSuffixName) {
 			for (String processedField : processedFieldInjections) {
 				if (processedField.equalsIgnoreCase(methodSuffixName)) {
 					return true;

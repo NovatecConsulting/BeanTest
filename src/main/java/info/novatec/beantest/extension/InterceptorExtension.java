@@ -28,12 +28,8 @@ import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.interceptor.Interceptor;
 import javax.interceptor.Interceptors;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import static info.novatec.beantest.extension.InterceptorWrapperImpl.InterceptorWrapperData.*;
 
-import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -42,194 +38,187 @@ import java.util.Set;
  * @param <X> the type of the annotated type
  * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
  */
-//TODO testcase: EJB with @Interceptor and own @InterceptorBinding
 public class InterceptorExtension<X> extends BaseExtension<X> {
 
-    private ProcessAnnotatedType<X> processAnnotatedType;
-    private static final InterceptorWrapper INTERCEPTOR_WRAPPER = AnnotationInstanceProvider.of(InterceptorWrapper.class);
+    private static final EjbInterceptorWrapper INTERCEPTOR_WRAPPER_ANNOTATION_INSTANCE =
+            AnnotationInstanceProvider.of(EjbInterceptorWrapper.class);
 
     /**
      * Replaces the meta data of the {@link javax.enterprise.inject.spi.ProcessAnnotatedType}.
      *
      * <p>
-     * The ProcessAnnotatedType's meta data will be replaced, if the annotated type has one of the following annotations:
+     * The ProcessAnnotatedType's meta data will be replaced, if the annotated type hold the following annotation:
      * <ul>
      * <li> {@link javax.interceptor.Interceptors}
      * </ul>
      *
      * @param pat the annotated type representing the class being processed
      */
-    public void processInterceptorsBeans(
+    public void onProcessEjbInterceptor(
             @Observes @WithAnnotations(Interceptors.class) ProcessAnnotatedType<X> pat) {
         processAnnotatedType = pat;
-        modifyInterceptorsBean();
+        new EjbInterceptorModification().modifyEjbInterceptor();
     }
 
     /**
      * Replaces the meta data of the {@link javax.enterprise.inject.spi.ProcessAnnotatedType}.
      *
      * <p>
-     * The ProcessAnnotatedType's meta data will be replaced, if the annotated type has one of the following annotations:
+     * The ProcessAnnotatedType's meta data will be replaced, if the annotated type hold the following annotation
      * <ul>
      * <li> {@link javax.interceptor.Interceptor}
      * </ul>
      *
      * @param pat the annotated type representing the class being processed
      */
-    public void processInterceptorBindingBeans(
+    public void onProcessInterceptorBindingBean(
             @Observes @WithAnnotations(Interceptor.class) ProcessAnnotatedType<X> pat) {
         processAnnotatedType = pat;
         modifyInterceptorBindingBean();
     }
 
     /**
-     * Adds {@link javax.inject.Inject} annotation to all the dependencies of the interceptor.
+     * Adds {@link javax.inject.Inject} annotation to all the dependencies declarations in the interceptor binding.
      *
      * @param pat
      *            the process annotated type.
      */
     private void modifyInterceptorBindingBean() {
-        AnnotatedTypeBuilder<X> builder = createTypeBuilderFromProcessedType(processAnnotatedType);
-        addInjectAnnotationOnProcessedType(processAnnotatedType.getAnnotatedType(), builder);
+        AnnotatedTypeBuilder<X> builder = createTypeBuilderFromProcessedType();
+        addInjectAnnotationInAnnotatedType(processAnnotatedType.getAnnotatedType(), builder);
         processAnnotatedType.setAnnotatedType(builder.create());
     }
 
     /**
-     * Mounts the InterceptorBinding {@link InterceptorWrapper} on the processed bean in order to be able to call
-     * modified EJB interceptor bindings.
-     * <br>
-     * Creates modified {@link javax.enterprise.inject.spi.AnnotatedType} instances of the corresponding
-     * {@link Interceptors} bindings and persist it into {@link InterceptorWrapperImpl}.
-     * <br>
-     * Ultimately the origin Interceptors annotation will be replaced with InterceptorWrapper.
-     * @see {@link #modifyInterceptorBindings(javax.enterprise.inject.spi.AnnotatedType,
-     * org.apache.deltaspike.core.util.metadata.builder.AnnotatedTypeBuilder)}
-     * @see {@link InterceptorWrapperImpl}
+     * Comprises the transformation logic regarding the modification of {@link javax.interceptor.Interceptors}
+     * bindings.
      */
-    private void modifyInterceptorsBean() {
-        AnnotatedTypeBuilder<X> annotatedTypeBuilder = createTypeBuilderFromProcessedType(processAnnotatedType);
+    private class EjbInterceptorModification {
 
-        if (isClassLevelAnnotationPresent()) {
-            modifyClassLevelInterceptorBindings(annotatedTypeBuilder);
+        private final AnnotatedTypeBuilder<X> annotatedTypeBuilder = createTypeBuilderFromProcessedType();
+
+        private final EjbInterceptorWrapperImpl.EjbInterceptorWrapperRepository ejbInterceptorWrapperRepository =
+                EjbInterceptorWrapperImpl.EjbInterceptorWrapperRepository.getInstance();
+
+        private final EjbInterceptorWrapperImpl.EjbInterceptorWrapperBinding ejbInterceptorWrapperBinding =
+                initializeInterceptorWrapperBinding();
+
+        /**
+         * Mounts the InterceptorBinding {@link EjbInterceptorWrapper} on the processed bean in order to be able to call
+         * modified EJB interceptor bindings.
+         * <br>
+         * Creates modified {@link javax.enterprise.inject.spi.AnnotatedType} instances of the corresponding
+         * {@link Interceptors} bindings and persist it into {@link EjbInterceptorWrapperImpl}.
+         * <br>
+         * Ultimately the origin Interceptors annotation will be replaced with InterceptorWrapper.
+         * @see {@link #modifyInterceptorBindings(javax.enterprise.inject.spi.AnnotatedType,
+         * org.apache.deltaspike.core.util.metadata.builder.AnnotatedTypeBuilder)}
+         * @see {@link EjbInterceptorWrapperImpl}
+         */
+        public void modifyEjbInterceptor() {
+            if (isClassLevelAnnotationPresent()) {
+                modifyClassLevelInterceptor();
+            }
+
+            if (isMethodLevelAnnotationPresent()) {
+                modifyMethodLevelInterceptor();
+            }
+
+            saveInterceptorWrapperBinding();
+
+            processAnnotatedType.setAnnotatedType(annotatedTypeBuilder.create());
         }
-        
-        if (isMethodLevelAnnotationPresent()) {
-            modifyMethodLevelInterceptorBindings(annotatedTypeBuilder);
+
+        private void saveInterceptorWrapperBinding() {
+            ejbInterceptorWrapperRepository.addInterceptorWrapperBinding(getJavaClassFromProcessedTyped(),
+                    ejbInterceptorWrapperBinding);
         }
 
-        //TODO handle ctor level + test case
+        private EjbInterceptorWrapperImpl.EjbInterceptorWrapperBinding initializeInterceptorWrapperBinding() {
+            EjbInterceptorWrapperImpl.EjbInterceptorWrapperBinding wrapperBinding = new EjbInterceptorWrapperImpl
+                    .EjbInterceptorWrapperBinding();
+            wrapperBinding.setInterceptedClazz(processAnnotatedType.getClass());
+            return wrapperBinding;
+        }
 
-        processAnnotatedType.setAnnotatedType(annotatedTypeBuilder.create());
-    }
+        private boolean isClassLevelAnnotationPresent() {
+            return getAnnotatedTypeFromProcessedType().isAnnotationPresent(Interceptors.class);
+        }
 
-    private boolean isMethodLevelAnnotationPresent() {
-        Set<AnnotatedMethod<? super X>> methods = processAnnotatedType.getAnnotatedType().getMethods();
-        for (AnnotatedMethod annotatedMethod: methods) {
-            if (annotatedMethod.isAnnotationPresent(Interceptors.class)) {
-                return true;
+        private boolean isMethodLevelAnnotationPresent() {
+            Set<AnnotatedMethod<? super X>> methods = getAnnotatedTypeFromProcessedType().getMethods();
+            for (AnnotatedMethod annotatedMethod: methods) {
+                if (annotatedMethod.isAnnotationPresent(Interceptors.class)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private void modifyMethodLevelInterceptor() {
+            Set<AnnotatedMethod<? super X>> methodsFromAnnotatedType = getAnnotatedTypeFromProcessedType().getMethods();
+
+            for (final AnnotatedMethod originMethod: methodsFromAnnotatedType) {
+                if (originMethod.isAnnotationPresent(Interceptors.class)) {
+                    annotatedTypeBuilder.removeFromMethod(originMethod, Interceptors.class);
+                    annotatedTypeBuilder.addToMethod(originMethod, INTERCEPTOR_WRAPPER_ANNOTATION_INSTANCE);
+                    ejbInterceptorWrapperBinding.addMethodLevelBinding(originMethod.getJavaMember(),
+                            createModifiedInterceptorBindings(retrieveMethodLevelInterceptorAnnotation(originMethod)));
+                }
             }
         }
-        return false;
-    }
 
-    private void modifyMethodLevelInterceptorBindings(AnnotatedTypeBuilder<X> annotatedTypeBuilder) {
-        Set<AnnotatedMethod<? super X>> methods = processAnnotatedType.getAnnotatedType().getMethods();
+        private Interceptors retrieveMethodLevelInterceptorAnnotation(AnnotatedMethod originMethod) {
+            return originMethod.getAnnotation(Interceptors.class);
+        }
 
-        for (final AnnotatedMethod annotatedMethod: methods) {
-            if (annotatedMethod.isAnnotationPresent(Interceptors.class)) {
-                annotatedTypeBuilder.removeFromMethod(annotatedMethod, Interceptors.class);
-                annotatedTypeBuilder.addToMethod(annotatedMethod, INTERCEPTOR_WRAPPER);
+        /**
+         * Mounts the InterceptorBinding {@link EjbInterceptorWrapper} on the processed bean in order to be able to call
+         * modified EJB interceptor bindings.
+         * <br>
+         * Creates modified {@link AnnotatedType} instances of the corresponding {@link Interceptors} bindings and persist
+         * it into {@link EjbInterceptorWrapperImpl}.
+         * <br>
+         * Ultimately the origin Interceptors annotation will be replaced with InterceptorWrapper.
+         * @see {@link #modifyEjbInterceptor()}
+         * @see {@link #getModifiedInterceptorBindings(AnnotatedType)}
+         */
+        private void modifyClassLevelInterceptor() {
+            annotatedTypeBuilder.removeFromClass(Interceptors.class);
+            annotatedTypeBuilder.addToClass(INTERCEPTOR_WRAPPER_ANNOTATION_INSTANCE);
+            ejbInterceptorWrapperBinding.addClassLevelBinding(createModifiedInterceptorBindings(
+                    retrieveClassLevelInterceptorAnnotation()));
+        }
 
-                InterceptorWrapperImpl.InterceptorWrapperData.addInterceptedClassWithModifiedMethodInterceptorBindings(
-                        getJavaClassFromAnnotatedType(),
-                        new HashMap<Method, List<AnnotatedType>>(){
-                            {
-                                put(annotatedMethod.getJavaMember(),
-                                    getModifiedInterceptorBindings(annotatedMethod.getAnnotation(Interceptors.class)));
-                            }
-                        }
-                );
+        private Interceptors retrieveClassLevelInterceptorAnnotation() {
+            return getAnnotatedTypeFromProcessedType().getAnnotation(Interceptors.class);
+        }
+
+        /**
+         * Modifies the interceptor bindings i.e. injection points of the provided {@link AnnotatedType}.
+         * In order to cut unneeded interceptor modifications, the modified interceptor bindings will be stored inside
+         * a cache in {@link EjbInterceptorWrapperImpl}.
+         * <br>
+         * <br>
+         * <b>@SuppressWarnings</b>: this method suppresses the following warnings types: rawtypes and unchecked due the
+         * fact that the retrieval of the interceptor bindings
+         * via {@link Interceptors#value()} forces to use raw type {@link Class} objects.
+         * @param annotatedType the processed {@link AnnotatedType}
+         * @return list of modified interceptor bindings
+         */
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        private Set<AnnotatedType> createModifiedInterceptorBindings(Interceptors interceptorsAnnotation) {
+            Class[] interceptorBindings = interceptorsAnnotation.value();
+            Set<AnnotatedType> modifiedInterceptorClasses = new LinkedHashSet<AnnotatedType>();
+            AnnotatedType modifiedInterceptorInstance;
+
+            for (Class originInterceptor : interceptorBindings) {
+                modifiedInterceptorInstance = addInjectAnnotationInRawClass(originInterceptor);
+                modifiedInterceptorClasses.add(modifiedInterceptorInstance);
             }
+
+            return modifiedInterceptorClasses;
         }
 
-    }
-
-    private Class<X> getJavaClassFromAnnotatedType() {
-        return processAnnotatedType.getAnnotatedType().getJavaClass();
-    }
-
-    private boolean isClassLevelAnnotationPresent() {
-        return processAnnotatedType.getAnnotatedType().isAnnotationPresent(Interceptors.class);
-    }
-
-    /**
-     * Mounts the InterceptorBinding {@link InterceptorWrapper} on the processed bean in order to be able to call
-     * modified EJB interceptor bindings.
-     * <br>
-     * Creates modified {@link AnnotatedType} instances of the corresponding {@link Interceptors} bindings and persist
-     * it into {@link InterceptorWrapperImpl}.
-     * <br>
-     * Ultimately the origin Interceptors annotation will be replaced with InterceptorWrapper.
-     * @see {@link #modifyInterceptorsBean()}
-     * @see {@link #getModifiedInterceptorBindings(AnnotatedType)}
-     * @param annotatedTypeBuilder
-     */
-    private void modifyClassLevelInterceptorBindings(AnnotatedTypeBuilder<X> annotatedTypeBuilder) {
-        annotatedTypeBuilder.removeFromClass(Interceptors.class);
-        annotatedTypeBuilder.addToClass(INTERCEPTOR_WRAPPER);
-        addInterceptedClassWithModifiedInterceptorBindings(
-                getJavaClassFromAnnotatedType(),
-                getModifiedInterceptorBindings());
-    }
-
-    /**
-     * Modifies the interceptor bindings i.e. injection points of the provided {@link AnnotatedType}.
-     * In order to cut unneeded interceptor modifications, the modified interceptor bindings will be stored inside
-     * a cache in {@link InterceptorWrapperImpl}.
-     * <br>
-     * <br>
-     * <b>@SuppressWarnings</b>: this method suppresses the following warnings types: rawtypes and unchecked due the
-     * fact that the retrieval of the interceptor bindings
-     * via {@link Interceptors#value()} forces to use raw type {@link Class} objects.
-     * @param annotatedType the processed {@link AnnotatedType}
-     * @return list of modified interceptor bindings
-     */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    private List<AnnotatedType> getModifiedInterceptorBindings() {
-        Interceptors interceptorsAnnotation = processAnnotatedType.getAnnotatedType().getAnnotation(Interceptors.class);
-        Class[] interceptorBindings = interceptorsAnnotation.value();
-        List<AnnotatedType> modifiedInterceptorClasses = new ArrayList<AnnotatedType>();
-        AnnotatedType modifiedInterceptorInstance;
-
-        for (Class originInterceptor : interceptorBindings) {
-            if (isInterceptorAlreadyModified(originInterceptor)) {
-                modifiedInterceptorInstance = getModifiedInterceptorFor(originInterceptor);
-            } else {
-                modifiedInterceptorInstance = createModifiedInterceptor(originInterceptor);
-                addOriginInterceptorWithModifiedInterceptor(originInterceptor, modifiedInterceptorInstance);
-            }
-            modifiedInterceptorClasses.add(modifiedInterceptorInstance);
-        }
-        return modifiedInterceptorClasses;
-    }
-
-    private List<AnnotatedType> getModifiedInterceptorBindings(Interceptors interceptorsAnnotation ) {
-        Class[] interceptorBindings = interceptorsAnnotation.value();
-        List<AnnotatedType> modifiedInterceptorClasses = new ArrayList<AnnotatedType>();
-        AnnotatedType modifiedInterceptorInstance;
-
-        for (Class originInterceptor : interceptorBindings) {
-            modifiedInterceptorInstance = createModifiedInterceptor(originInterceptor);
-            addOriginInterceptorWithModifiedInterceptor(originInterceptor, modifiedInterceptorInstance);
-            modifiedInterceptorClasses.add(modifiedInterceptorInstance);
-        }
-        return modifiedInterceptorClasses;
-    }
-
-    private AnnotatedType createModifiedInterceptor(Class originInterceptor) {
-        AnnotatedTypeBuilder typeBuilder = new AnnotatedTypeBuilder().readFromType(originInterceptor);
-        AnnotatedType modifiedInterceptor = typeBuilder.create();
-        addInjectAnnotationOnProcessedType(modifiedInterceptor, typeBuilder);
-        return modifiedInterceptor;
     }
 }

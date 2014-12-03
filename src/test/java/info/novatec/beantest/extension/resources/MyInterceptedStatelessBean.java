@@ -49,5 +49,6 @@ import javax.interceptor.Interceptors;
 public class MyInterceptedStatelessBean {
 
 	public void businessMethod() {
-	}
+        System.out.println("Business");
+    }
 }

@@ -39,7 +39,7 @@ package info.novatec.beantest.extension.resources;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
 
-public class MyMethodLevelInterceptor {
+public class DummyInterceptor {
 
     public static boolean isInvoked;
 

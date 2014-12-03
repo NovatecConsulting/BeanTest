@@ -37,22 +37,43 @@
 package info.novatec.beantest.extension;
 
 import info.novatec.beantest.api.BaseBeanTest;
-import info.novatec.beantest.extension.resources.MyExcludedInterceptor;
-import info.novatec.beantest.extension.resources.EJBWithExludeClassInterception;
+import info.novatec.beantest.extension.resources.DummyInterceptor;
+import info.novatec.beantest.extension.resources.DummyInterceptor2;
+import info.novatec.beantest.extension.resources.EJBWithExcludedClassInterception;
+import info.novatec.beantest.extension.resources.ExcludedClassLevelWithMethodInterception;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 
 /**
+ * Asserting different level of interceptor excluding functionality.
+ * @see info.novatec.beantest.extension.EjbInterceptorWrapperImpl
  * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
  */
 public class TestExcludedInterceptors extends BaseBeanTest {
 
+    @Before
+    public void setUp() throws Exception {
+        DummyInterceptor.isInvoked = false;
+        DummyInterceptor2.isInvoked = false;
+    }
+
     @Test
     public void shouldNotInvokeSurroundingInterceptor() {
-        EJBWithExludeClassInterception ejbWithExludeClassInterception = getBean(EJBWithExludeClassInterception.class);
-        ejbWithExludeClassInterception.business();
-        Assert.assertThat(MyExcludedInterceptor.isCalled, is(false));
+        EJBWithExcludedClassInterception ejbWithExcludedClassInterception = getBean(
+                EJBWithExcludedClassInterception.class);
+        ejbWithExcludedClassInterception.business();
+        Assert.assertThat(DummyInterceptor.isInvoked, is(false));
+    }
+
+    @Test
+    public void assertThatClassLevelInterceptorIsExcludedAndMethodLevelInterceptorIsCalled() throws Exception {
+        ExcludedClassLevelWithMethodInterception bean = getBean(ExcludedClassLevelWithMethodInterception.class);
+        bean.business();
+        Assert.assertThat(DummyInterceptor.isInvoked, is(false));
+        Assert.assertThat(DummyInterceptor2.isInvoked, is(true));
     }
 }

@@ -35,26 +35,35 @@
 package info.novatec.beantest.extension;
 
 import info.novatec.beantest.api.BaseBeanTest;
-import info.novatec.beantest.extension.resources.MyEJBServiceWithMultipleInterceptorBinding;
-import info.novatec.beantest.extension.resources.MyInterceptedDefaultScopeBean;
-import info.novatec.beantest.extension.resources.MyInterceptedStatelessBean;
+import info.novatec.beantest.extension.resources.*;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 
 /**
  * This test verifies that EJBs with EJB interceptor bindings are processed correctly by BeanTestExtension.
- * @see InterceptorWrapperImpl
+ * @see EjbInterceptorWrapperImpl
  * @see BaseExtension
  * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
  * 
  */
 public class TestInterceptedBean extends BaseBeanTest {
 
-	@Test
+    @Before
+    public void setUp() throws Exception {
+        MyInterceptor.isInvoked = false;
+        MyInterceptor2.isInvoked = false;
+    }
+
+    @Test
 	public void shouldInjectDependenciesInSurroundingInterceptorOnStatelessBean() {
 		MyInterceptedStatelessBean bean = getBean(MyInterceptedStatelessBean.class);
 		Assert.assertNotNull(bean);
 		bean.businessMethod();
+        assertThat(MyInterceptor.isInvoked, is(true));
 	}
 	
 	@Test
@@ -62,6 +71,7 @@ public class TestInterceptedBean extends BaseBeanTest {
 		MyInterceptedDefaultScopeBean bean = getBean(MyInterceptedDefaultScopeBean.class);
 		Assert.assertNotNull(bean);
 		bean.businessMethod();
+        assertThat(MyInterceptor.isInvoked, is(true));
 	}
 	
 	@Test
@@ -69,6 +79,7 @@ public class TestInterceptedBean extends BaseBeanTest {
 		MyEJBServiceWithMultipleInterceptorBinding bean = getBean(MyEJBServiceWithMultipleInterceptorBinding.class);
 		Assert.assertNotNull(bean);
 		bean.businessMethod();
+        assertThat(MyInterceptor2.isInvoked, is(true));
 	}
 	
 }

@@ -34,42 +34,22 @@
  *
  */
 
-package info.novatec.beantest.extension;
+package info.novatec.beantest.extension.resources;
 
-import info.novatec.beantest.api.BaseBeanTest;
 import info.novatec.beantest.extension.resources.DummyInterceptor;
-import info.novatec.beantest.extension.resources.DummyInterceptor2;
-import info.novatec.beantest.extension.resources.EJBInterceptedMethodAndClassLevel;
-import info.novatec.beantest.extension.resources.EJBInterceptedMethodLevel;
-import org.junit.Before;
-import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import javax.ejb.Stateless;
+import javax.interceptor.ExcludeClassInterceptors;
+import javax.interceptor.Interceptors;
 
 /**
  * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
  */
-public class TestEJBInterceptedMethodLevel extends BaseBeanTest {
+@Stateless
+@Interceptors(DummyInterceptor.class)
+public class EJBWithExcludedClassInterception {
 
-    @Before
-    public void setUp() throws Exception {
-        DummyInterceptor.isInvoked = false;
-        DummyInterceptor2.isInvoked = false;
-    }
-
-    @Test
-    public void business_service_call_should_trigger_method_level_interception() throws Exception {
-        EJBInterceptedMethodLevel bean = getBean(EJBInterceptedMethodLevel.class);
-        bean.businessService();
-        assertThat(DummyInterceptor.isInvoked, is(true));
-    }
-
-    @Test
-    public void business_service_call_should_trigger_method_and_class_level_interception() throws Exception {
-        EJBInterceptedMethodAndClassLevel bean = getBean(EJBInterceptedMethodAndClassLevel.class);
-        bean.business();
-        assertThat(DummyInterceptor.isInvoked, is(true));
-        assertThat(DummyInterceptor2.isInvoked, is(true));
+    @ExcludeClassInterceptors
+    public void business() {
     }
 }

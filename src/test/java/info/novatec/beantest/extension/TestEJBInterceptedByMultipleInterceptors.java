@@ -42,7 +42,10 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 /**
+ * The purpose of this test is ensure that intercepted methods (holding multiple interceptor bindings) are invoked
+ * only time. Further this test asserts that multiple interceptor bindings can join and reuse active transaction.
  * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
+ * @see info.novatec.beantest.transactions.TransactionalInterceptor
  */
 public class TestEJBInterceptedByMultipleInterceptors extends BaseBeanTest {
 
@@ -51,6 +54,7 @@ public class TestEJBInterceptedByMultipleInterceptors extends BaseBeanTest {
         EJBInterceptedByMultipleInterceptors bean = getBean(EJBInterceptedByMultipleInterceptors.class);
         bean.business();
         assertThat(bean.getPersistedEntitiesCount(), is(4));
+        assertThat(bean.getBusinessInvocationCount(), is(1));
     }
 
 }

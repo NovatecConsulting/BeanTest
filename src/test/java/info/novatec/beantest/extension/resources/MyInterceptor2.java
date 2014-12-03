@@ -45,13 +45,16 @@ import javax.persistence.PersistenceContext;
  * 
  */
 public class MyInterceptor2 {
-	
+
+    public static boolean isInvoked;
+
 	@PersistenceContext
 	EntityManager entityManager;
 
 	@AroundInvoke
 	public Object handle(InvocationContext context) throws Exception {
-		entityManager.getTransaction();
+		isInvoked = true;
+        entityManager.getTransaction();
 		return context.proceed();
 	}
 }

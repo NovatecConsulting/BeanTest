@@ -45,7 +45,6 @@ import javax.interceptor.Interceptors;
  */
 @Interceptors(MyInterceptor.class)
 public class MyInterceptedDefaultScopeBean {
-
 	public void businessMethod() {
 	}
 }

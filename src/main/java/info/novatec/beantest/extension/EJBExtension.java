@@ -50,9 +50,10 @@ public class EJBExtension<X> extends BaseExtension<X> {
      *
      * @param pat the annotated type representing the class being processed
      */
-    public void processStatelessAndMessageDrivenBeans(
+    public void onProcessStatelessOrMessageDrivenBean(
             @Observes @WithAnnotations({Stateless.class, MessageDriven.class}) ProcessAnnotatedType<X> pat) {
-        modifyAnnotatedTypeMetaData(pat);
+        processAnnotatedType = pat;
+        modifyAnnotatedTypeMetaData();
     }
 
     /**
@@ -60,19 +61,17 @@ public class EJBExtension<X> extends BaseExtension<X> {
      * its EJB injection points into CDI injection points (i.e. it adds the {@link javax.inject.Inject})
      * <br>
      * Further modifies the interceptor bindings if the given {@link javax.enterprise.inject.spi.AnnotatedType} holds an {@link javax.interceptor.Interceptors} annotation.
-     * The modified interceptor bindings will be backed on the processed {@link javax.enterprise.inject.spi.AnnotatedType} via a custom {@link javax.interceptor.InterceptorBinding} interceptor: {@link InterceptorWrapper}.
+     * The modified interceptor bindings will be backed on the processed {@link javax.enterprise.inject.spi.AnnotatedType} via a custom {@link javax.interceptor.InterceptorBinding} interceptor: {@link EjbInterceptorWrapper}.
      * @param pat the process annotated type.
      * @see {@link #modifyInterceptorBindings(ProcessAnnotatedType)}
-     * @see {@link InterceptorWrapper}
+     * @see {@link EjbInterceptorWrapper}
      */
-    private void modifyAnnotatedTypeMetaData(ProcessAnnotatedType<X> pat) {
-        Transactional transactionalAnnotation = AnnotationInstanceProvider.of(Transactional.class);
-        RequestScoped requestScopedAnnotation = AnnotationInstanceProvider.of(RequestScoped.class);
-
-        AnnotatedType<X> annotatedType = pat.getAnnotatedType();
-        AnnotatedTypeBuilder<X> builder = createTypeBuilderFromProcessedType(pat);
-        builder.addToClass(transactionalAnnotation).addToClass(requestScopedAnnotation);
-        addInjectAnnotationOnProcessedType(annotatedType, builder);
-        pat.setAnnotatedType(builder.create());
+    private void modifyAnnotatedTypeMetaData() {
+        AnnotatedType<X> annotatedType = getAnnotatedTypeFromProcessedType();
+        AnnotatedTypeBuilder<X> builder = createTypeBuilderFromProcessedType();
+        builder.addToClass(AnnotationInstanceProvider.of(Transactional.class))
+               .addToClass(AnnotationInstanceProvider.of(RequestScoped.class));
+        addInjectAnnotationInAnnotatedType(annotatedType, builder);
+        processAnnotatedType.setAnnotatedType(builder.create());
     }
 }

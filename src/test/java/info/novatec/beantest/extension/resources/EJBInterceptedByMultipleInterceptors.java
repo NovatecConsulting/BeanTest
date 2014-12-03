@@ -44,16 +44,21 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 
 /**
+ * This bean serves for testing multiple interceptor bindings and transactional behaviour between multiple interceptors.
  * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
+ * @see info.novatec.beantest.extension.TestEJBInterceptedByMultipleInterceptors
  */
 @Stateless
 @Interceptors(value = {Interceptor1SharingTransaction.class, Interceptor2SharingTransaction.class})
 public class EJBInterceptedByMultipleInterceptors {
 
+    private int businessCallCount;
+
     @PersistenceContext
     EntityManager entityManager;
 
     public void business() {
+        businessCallCount++;
     }
 
     public int getPersistedEntitiesCount() {
@@ -61,5 +66,9 @@ public class EJBInterceptedByMultipleInterceptors {
         Root<MyEntity> from = createQuery.from(MyEntity.class);
         CriteriaQuery<MyEntity> select = createQuery.select(from);
         return entityManager.createQuery(select).getResultList().size();
+    }
+
+    public int getBusinessInvocationCount() {
+        return businessCallCount;
     }
 }

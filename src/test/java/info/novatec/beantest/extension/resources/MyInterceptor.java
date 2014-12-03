@@ -46,14 +46,20 @@ import javax.persistence.PersistenceContext;
  */
 public class MyInterceptor {
 
+    public static boolean isInvoked;
+
 	@PersistenceContext
 	EntityManager em;
 	
 	@AroundInvoke
 	public Object handle(InvocationContext context) throws Exception {
 		try {
-			return context.proceed();
-		} finally {
+            System.out.println("Enter");
+            isInvoked = true;
+            Object proceed = context.proceed();
+            System.out.println("Exit");
+            return proceed;
+        } finally {
 			if (! em.getTransaction().isActive()) {
 				em.getTransaction().begin();
 			}
