@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
-package info.novatec.beantest.demo.ejb;
+package info.novatec.beantest.utils.mocks;
+
+import info.novatec.beantest.extension.resources.MyExternalService;
+import javax.enterprise.inject.Produces;
+import org.mockito.Mockito;
 
 /**
- * Represents an external service whose implementation is located somewhere else.
- * <p>
- * It is common to have dependencies to external services or modules in a JEE Application. 
- * Usually it is possible to access those external services via a shared interface. The implementation of
- * such interface is normally located in another module or application.
+ * Creates Mockito mocks for external services.
+ * 
  * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
-public interface MyExternalService {
+public class ExternalServicesMockProducer {
     
-    String doSomething();
+    private static MyExternalService externalServiceMock=Mockito.mock(MyExternalService.class);
+    
+    @Produces
+    public static MyExternalService getExternalService() {
+        return  externalServiceMock;
+    }
     
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package info.novatec.beantest.demo.entities;
+package info.novatec.beantest.utils.entities;
 
 import java.io.Serializable;
 import javax.persistence.Entity;

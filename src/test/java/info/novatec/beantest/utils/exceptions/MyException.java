@@ -14,24 +14,18 @@
  * limitations under the License.
  */
 
-package info.novatec.beantest.demo.mocks;
-
-import info.novatec.beantest.demo.ejb.MyExternalService;
-import javax.enterprise.inject.Produces;
-import org.mockito.Mockito;
+package info.novatec.beantest.utils.exceptions;
 
 /**
- * Creates Mockito mocks for external services.
- * 
+ * Demo Exception.
+ *
  * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
-public class ExternalServicesMockProducer {
-    
-    private static MyExternalService externalServiceMock=Mockito.mock(MyExternalService.class);
-    
-    @Produces
-    public static MyExternalService getExternalService() {
-        return  externalServiceMock;
+public class MyException extends RuntimeException {
+
+    public MyException(String message) {
+        super(message);
     }
+    
     
 }

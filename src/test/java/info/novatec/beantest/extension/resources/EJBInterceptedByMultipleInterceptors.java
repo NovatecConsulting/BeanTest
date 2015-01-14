@@ -1,0 +1,74 @@
+/*
+ *
+ *  * Bean Testing.
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  *      http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
+ *
+ */
+
+/*
+ * Bean Testing.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package info.novatec.beantest.extension.resources;
+
+import info.novatec.beantest.utils.entities.MyEntity;
+
+import javax.ejb.Stateless;
+import javax.interceptor.Interceptors;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+
+/**
+ * This bean serves for testing multiple interceptor bindings and transactional behaviour between multiple interceptors.
+ * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
+ * @see info.novatec.beantest.extension.TestEJBInterceptedByMultipleInterceptors
+ */
+@Stateless
+@Interceptors(value = {Interceptor1SharingTransaction.class, Interceptor2SharingTransaction.class})
+public class EJBInterceptedByMultipleInterceptors {
+
+    private int businessCallCount;
+
+    @PersistenceContext
+    EntityManager entityManager;
+
+    public void business() {
+        businessCallCount++;
+    }
+
+    public int getPersistedEntitiesCount() {
+        CriteriaQuery<MyEntity> createQuery = entityManager.getCriteriaBuilder().createQuery(MyEntity.class);
+        Root<MyEntity> from = createQuery.from(MyEntity.class);
+        CriteriaQuery<MyEntity> select = createQuery.select(from);
+        return entityManager.createQuery(select).getResultList().size();
+    }
+
+    public int getBusinessInvocationCount() {
+        return businessCallCount;
+    }
+}

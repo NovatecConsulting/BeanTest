@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package info.novatec.beantest.demo.entities;
+package info.novatec.beantest.utils.entities;
 
 import java.io.Serializable;
 import javax.persistence.Column;

@@ -51,7 +51,7 @@ public class TransactionalInterceptor {
      * Exceptions that should not cause the transaction to rollback according to Java EE Documentation. 
      * (http://docs.oracle.com/javaee/6/api/javax/persistence/PersistenceException.html)
      */
-    private static final Set<Class<?>> NO_ROLLBACK_EXCEPTIONS=new HashSet<Class<?>>(Arrays.asList(
+    private static final Set<Class<?>> NO_ROLLBACK_EXCEPTIONS = new HashSet<Class<?>>(Arrays.<Class<?>>asList(
             NonUniqueResultException.class,
             NoResultException.class,
             QueryTimeoutException.class,
