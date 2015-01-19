@@ -22,10 +22,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import info.novatec.beantest.api.BaseBeanTest;
+import info.novatec.beantest.api.BeanTestingRunner;
 import info.novatec.beantest.demo.entities.MyEntity;
 import info.novatec.beantest.demo.exceptions.MyException;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import javax.inject.Inject;
 
 /**
  * This test verifies that all dependencies are properly resolved as well as the
@@ -34,17 +38,25 @@ import org.junit.Test;
  * The database schema is recreated for every test method.
  *
  * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
- */ 
-public class TestEJBInjection extends BaseBeanTest {
-    
+ */
+@RunWith(BeanTestingRunner.class)
+public class TestEJBInjection {
+
+    @Inject
+    MyEJBService myService;
+
+    @Inject
+    MyOtherEJBService myOtherService;
+
+    @Inject
+    MyEJBServiceWithEntityManagerSetter myEJBServiceWithEntityManagerSetter;
+
     @Test
     public void shouldInjectEJBAsCDIBean() {
-        MyEJBService myService = getBean(MyEJBService.class);
         //An Entity should be persisted and you should see a message logged in the console.
         myService.callOtherServiceAndPersistAnEntity();
         //Let's create a reference of another EJB to query the database.
-        MyOtherEJBService myOtherService = getBean(MyOtherEJBService.class);
-        
+
         assertThat(myOtherService.getAllEntities(), hasSize(1));
 
     }
@@ -54,13 +66,11 @@ public class TestEJBInjection extends BaseBeanTest {
      */
     @Test
     public void shouldPersistEntityInSpiteOfException() {
-        MyEJBService myService = getBean(MyEJBService.class);
         MyEntity myEntity=new MyEntity();
         myEntity.setName("Foo");
         //An exception is thrown within the following method call, but because it is caught, the entity should have benn saved.
         myService.saveEntityAndHandleException(myEntity);
         
-        MyOtherEJBService myOtherService = getBean(MyOtherEJBService.class);
         assertThat(myOtherService.getAllEntities(), hasSize(1));
         
     }
@@ -70,33 +80,25 @@ public class TestEJBInjection extends BaseBeanTest {
      */
     @Test
     public void shouldNotPersistEntityBecauseOfException() {
-        MyEJBService myService = getBean(MyEJBService.class);
         MyEntity myEntity=new MyEntity();
         myEntity.setName("Foo");
         try {
              myService.attemptToSaveEntityAndThrowException(myEntity);
              fail("Should have thrown an exception");
         } catch(MyException e) {
-            MyOtherEJBService myOtherService = getBean(MyOtherEJBService.class);
             assertThat(myOtherService.getAllEntities(), is(empty()));
         }
-       
-        
-        
     }
     
 	@Test
 	public void shouldInjectEJBAsCDIBeanUsingSetter() {
-		MyEJBService myService = getBean(MyEJBService.class);
-		
+
 		assertNotNull(myService.getOtherService2());
 	}
 
 	@Test
 	public void shouldInjectPersistenceContextUsingSetter() {
-		MyEJBServiceWithEntityManagerSetter myService = getBean(MyEJBServiceWithEntityManagerSetter.class);
-		
-		assertNotNull(myService.getEm());
+		assertNotNull(myEJBServiceWithEntityManagerSetter.getEm());
 	}
 
 }
