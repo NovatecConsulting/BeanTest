@@ -27,7 +27,6 @@ import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.inject.Inject;
 import javax.persistence.PersistenceContext;
-import org.apache.deltaspike.core.util.metadata.AnnotationInstanceProvider;
 import org.apache.deltaspike.core.util.metadata.builder.AnnotatedTypeBuilder;
 
 /**
@@ -36,8 +35,6 @@ import org.apache.deltaspike.core.util.metadata.builder.AnnotatedTypeBuilder;
  * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
 public final class InjectionHelper {
-    
-    private static final Inject INJECT_ANNOTATION = AnnotationInstanceProvider.of(Inject.class);
     
     private static final Set<Class<? extends Annotation>> JAVA_EE_ANNOTATIONS = createJavaEEAnnotationSet();
             
@@ -108,12 +105,12 @@ public final class InjectionHelper {
     public static <X> void addInjectAnnotation(final AnnotatedType<X> annotatedType, AnnotatedTypeBuilder<X> builder) {
         for (AnnotatedField<? super X> field : annotatedType.getFields()) {
             if (shouldInjectionAnnotationBeAddedToMember(field)) {
-                builder.addToField(field, INJECT_ANNOTATION);
+                builder.addToField(field, AnnotationInstances.INJECT);
             }
         }
         for (AnnotatedMethod<? super X> method : annotatedType.getMethods()) {
             if (shouldInjectionAnnotationBeAddedToMember(method)) {
-                builder.addToMethod(method, INJECT_ANNOTATION);
+                builder.addToMethod(method,  AnnotationInstances.INJECT);
             }
         }
     }

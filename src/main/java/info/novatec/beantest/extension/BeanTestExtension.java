@@ -18,15 +18,17 @@ package info.novatec.beantest.extension;
 import info.novatec.beantest.transactions.Transactional;
 import javax.ejb.EJB;
 import javax.ejb.MessageDriven;
+import javax.ejb.Singleton;
 import javax.ejb.Stateless;
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
+import javax.enterprise.inject.spi.WithAnnotations;
 import javax.inject.Inject;
 import javax.interceptor.Interceptor;
-import org.apache.deltaspike.core.util.metadata.AnnotationInstanceProvider;
 import org.apache.deltaspike.core.util.metadata.builder.AnnotatedTypeBuilder;
 
 /**
@@ -39,6 +41,8 @@ import org.apache.deltaspike.core.util.metadata.builder.AnnotatedTypeBuilder;
  * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
 public class BeanTestExtension implements Extension {
+     
+     
 
     /**
      * Replaces the meta data of the {@link ProcessAnnotatedType}.
@@ -48,18 +52,39 @@ public class BeanTestExtension implements Extension {
      * <ul>
      * <li> {@link Stateless}
      * <li> {@link MessageDriven}
-     * <li>  {@link Interceptor}
+     * <li> {@link Interceptor}
+     * <li> {@link Singleton}
      * </ul>
      *
      * @param <X> the type of the ProcessAnnotatedType
      * @param pat the annotated type representing the class being processed
      */
-    public <X> void processInjectionTarget(@Observes ProcessAnnotatedType<X> pat) {
+    public <X> void processInjectionTarget(@Observes @WithAnnotations({Stateless.class, MessageDriven.class, Interceptor.class, Singleton.class}) ProcessAnnotatedType<X> pat) {
         if (pat.getAnnotatedType().isAnnotationPresent(Stateless.class) || pat.getAnnotatedType().isAnnotationPresent(MessageDriven.class)) {
-            modifyAnnotatedTypeMetaData(pat);
+            modifiyAnnotatedTypeMetadata(pat);
         } else if (pat.getAnnotatedType().isAnnotationPresent(Interceptor.class)) {
             processInterceptorDependencies(pat);
+        } else if(pat.getAnnotatedType().isAnnotationPresent(Singleton.class)) {
+            addApplicationScopedAndTransactionalToSingleton(pat);
         }
+    }
+    
+    /**
+     * Adds {@link Transactional} and {@link ApplicationScoped} to the given annotated type and converts
+     * its EJB injection points into CDI injection points (i.e. it adds the {@link Inject})
+     * @param <X> the type of the annotated type.
+     * @param pat the process annotated type.
+     */
+    private <X> void addApplicationScopedAndTransactionalToSingleton(ProcessAnnotatedType<X> pat) {
+        AnnotatedType at = pat.getAnnotatedType();
+        
+        AnnotatedTypeBuilder<X> builder = new AnnotatedTypeBuilder<X>().readFromType(at);
+        
+        builder.addToClass(AnnotationInstances.APPLICATION_SCOPED).addToClass(AnnotationInstances.TRANSACTIONAL);
+        
+        InjectionHelper.addInjectAnnotation(at, builder);
+        
+        pat.setAnnotatedType(builder.create());
     }
 
     /**
@@ -68,14 +93,11 @@ public class BeanTestExtension implements Extension {
      * @param <X> the type of the annotated type
      * @param pat the process annotated type.
      */
-    private <X> void modifyAnnotatedTypeMetaData(ProcessAnnotatedType<X> pat) {
-        Transactional transactionalAnnotation = AnnotationInstanceProvider.of(Transactional.class);
-        RequestScoped requestScopedAnnotation = AnnotationInstanceProvider.of(RequestScoped.class);
-
+    private <X> void modifiyAnnotatedTypeMetadata(ProcessAnnotatedType<X> pat) {
         AnnotatedType at = pat.getAnnotatedType();
         
         AnnotatedTypeBuilder<X> builder = new AnnotatedTypeBuilder<X>().readFromType(at);
-        builder.addToClass(transactionalAnnotation).addToClass(requestScopedAnnotation);
+        builder.addToClass(AnnotationInstances.TRANSACTIONAL).addToClass(AnnotationInstances.REQUEST_SCOPED);
 
         InjectionHelper.addInjectAnnotation(at, builder);
         //Set the wrapper instead the actual annotated type
