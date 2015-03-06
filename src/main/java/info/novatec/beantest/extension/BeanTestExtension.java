@@ -16,22 +16,16 @@
 package info.novatec.beantest.extension;
 
 import info.novatec.beantest.transactions.Transactional;
-
-import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.ejb.MessageDriven;
 import javax.ejb.Stateless;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.AnnotatedField;
-import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.inject.Inject;
 import javax.interceptor.Interceptor;
-import javax.persistence.PersistenceContext;
-
 import org.apache.deltaspike.core.util.metadata.AnnotationInstanceProvider;
 import org.apache.deltaspike.core.util.metadata.builder.AnnotatedTypeBuilder;
 
@@ -83,7 +77,7 @@ public class BeanTestExtension implements Extension {
         AnnotatedTypeBuilder<X> builder = new AnnotatedTypeBuilder<X>().readFromType(at);
         builder.addToClass(transactionalAnnotation).addToClass(requestScopedAnnotation);
 
-        addInjectAnnotation(at, builder);
+        InjectionHelper.addInjectAnnotation(at, builder);
         //Set the wrapper instead the actual annotated type
         pat.setAnnotatedType(builder.create());
 
@@ -99,78 +93,9 @@ public class BeanTestExtension implements Extension {
      */
     private <X> void processInterceptorDependencies(ProcessAnnotatedType<X> pat) {
         AnnotatedTypeBuilder<X> builder = new AnnotatedTypeBuilder<X>().readFromType(pat.getAnnotatedType());
-        addInjectAnnotation(pat.getAnnotatedType(), builder);
+        InjectionHelper.addInjectAnnotation(pat.getAnnotatedType(), builder);
         pat.setAnnotatedType(builder.create());
     }
     
-    /**
-     * Returns <code>true</code> if the field is NOT annotated with {@link Inject} and is annotated with one of the following annotations:
-     * <ul>
-     * <li> {@link EJB}
-     * <li> {@link PersistenceContext}
-     * <li> {@link Resource}
-     * </ul>
-     * Otherwise, it returns <code>false</code>.
-     * 
-     * @param <X>
-     *            the type of the annotated field
-     * @param field
-     *            the annotated field whose annotations should be verified
-     * @return <code>true</code> if the field is NOT annotated with {@link Inject} and is annotated with {@link EJB},
-     *         {@link PersistenceContext} or {@link Resource}
-     */
-    private <X> boolean shouldInjectionAnnotationBeAddedToField(AnnotatedField<? super X> field) {
-        return !field.isAnnotationPresent(Inject.class)
-                    && (field.isAnnotationPresent(Resource.class) || field.isAnnotationPresent(EJB.class) || field.isAnnotationPresent(PersistenceContext.class));
-    }
-    
-    /**
-     * Returns <code>true</code> if the method is NOT annotated with {@link Inject} and is annotated with one of the following annotations:
-     * <ul>
-     * <li> {@link EJB}
-     * <li> {@link PersistenceContext}
-     * <li> {@link Resource}
-     * </ul>
-     * Otherwise, it returns <code>false</code>.
-     * 
-     * @param <X>
-     *            the type of the annotated method
-     * @param method
-     *            the annotated method whose annotations should be verified
-     * @return <code>true</code> if the method is NOT annotated with {@link Inject} and is annotated with {@link EJB},
-     *         {@link PersistenceContext} or {@link Resource}
-     */
-    private <X> boolean shouldInjectionAnnotationBeAddedToMethod(AnnotatedMethod<? super X> method) {
-        return !method.isAnnotationPresent(Inject.class)
-                    && (method.isAnnotationPresent(Resource.class) || method.isAnnotationPresent(EJB.class) || method.isAnnotationPresent(PersistenceContext.class));
-    }
-    
-     /**
-     * Adds the {@link Inject} annotation to the fields and setters of the annotated type if required.
-     * 
-     * @param <X>
-     *            the type of the annotated type
-     * @param annotatedType
-     *            the annotated type whose fields and setters the inject annotation should be added to
-     * @param builder
-     *            the builder that should be used to add the annotation.
-     * @see #shouldInjectionAnnotationBeAddedToField(AnnotatedField) and #shouldInjectionAnnotationBeAddedToMethod(AnnotatedMethod)
-     */
-    private <X> void addInjectAnnotation(final AnnotatedType<X> annotatedType, AnnotatedTypeBuilder<X> builder) {
-        Inject injectAnnotation = AnnotationInstanceProvider.of(Inject.class);
-        
-        for (AnnotatedField<? super X> field : annotatedType.getFields() ) {
-            if (shouldInjectionAnnotationBeAddedToField(field)) {
-                builder.addToField(field, injectAnnotation);
-            }
-        }
-        
-        for (AnnotatedMethod<? super X> method : annotatedType.getMethods()) {
-            if (shouldInjectionAnnotationBeAddedToMethod(method)) {
-            	builder.addToMethod(method, injectAnnotation);
-            }
-        }
-        
-    }
 
 }
