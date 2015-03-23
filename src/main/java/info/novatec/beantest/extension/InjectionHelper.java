@@ -47,7 +47,6 @@ public final class InjectionHelper {
     }
     
     private InjectionHelper() {
-        // Empty on purpose.
     }
 
     /**
@@ -66,7 +65,7 @@ public final class InjectionHelper {
      * @return <code>true</code> if the member is NOT annotated with {@link Inject} and is annotated with {@link EJB},
      *         {@link PersistenceContext} or {@link Resource}
      */
-    public static <X>  boolean shouldInjectionAnnotationBeAddedToMember(AnnotatedMember<? super X> member) {
+    private static <X> boolean shouldInjectionAnnotationBeAddedToMember(AnnotatedMember<? super X> member) {
         return !member.isAnnotationPresent(Inject.class) && hasJavaEEAnnotations(member);
     }
     
@@ -115,5 +114,4 @@ public final class InjectionHelper {
         }
     }
 
-    
 }

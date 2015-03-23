@@ -29,7 +29,7 @@ public class TestSingletonInjection extends BaseBeanTest {
     
     @Test
     public void shouldBeInstantiatedOnce() {
-        MyEjbSingleton singleton= getBean(MyEjbSingleton.class);
+        MyEjbSingleton singleton = getBean(MyEjbSingleton.class);
         assertThat(singleton.wasEjbCalled(), is(false));
         singleton.callAnEjb();
         assertThat(singleton.wasEjbCalled(), is(true));

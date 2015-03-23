@@ -28,7 +28,7 @@ public class MyEjbSingleton {
     @EJB
     MyOtherEJBService ejbService;
     
-    private boolean wasEjbCalled=false;
+    private boolean wasEjbCalled = false;
     
     public void callAnEjb() {
         ejbService.doSomething();

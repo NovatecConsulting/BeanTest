@@ -41,8 +41,6 @@ import org.apache.deltaspike.core.util.metadata.builder.AnnotatedTypeBuilder;
  * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
 public class BeanTestExtension implements Extension {
-     
-     
 
     /**
      * Replaces the meta data of the {@link ProcessAnnotatedType}.
@@ -59,8 +57,10 @@ public class BeanTestExtension implements Extension {
      * @param <X> the type of the ProcessAnnotatedType
      * @param pat the annotated type representing the class being processed
      */
-    public <X> void processInjectionTarget(@Observes @WithAnnotations({Stateless.class, MessageDriven.class, Interceptor.class, Singleton.class}) ProcessAnnotatedType<X> pat) {
-        if (pat.getAnnotatedType().isAnnotationPresent(Stateless.class) || pat.getAnnotatedType().isAnnotationPresent(MessageDriven.class)) {
+    public <X> void processInjectionTarget(@Observes @WithAnnotations({Stateless.class, MessageDriven.class,
+            Interceptor.class, Singleton.class}) ProcessAnnotatedType<X> pat) {
+        if (pat.getAnnotatedType().isAnnotationPresent(Stateless.class) || pat.getAnnotatedType()
+                .isAnnotationPresent(MessageDriven.class)) {
             modifiyAnnotatedTypeMetadata(pat);
         } else if (pat.getAnnotatedType().isAnnotationPresent(Interceptor.class)) {
             processInterceptorDependencies(pat);
@@ -77,13 +77,9 @@ public class BeanTestExtension implements Extension {
      */
     private <X> void addApplicationScopedAndTransactionalToSingleton(ProcessAnnotatedType<X> pat) {
         AnnotatedType at = pat.getAnnotatedType();
-        
         AnnotatedTypeBuilder<X> builder = new AnnotatedTypeBuilder<X>().readFromType(at);
-        
         builder.addToClass(AnnotationInstances.APPLICATION_SCOPED).addToClass(AnnotationInstances.TRANSACTIONAL);
-        
         InjectionHelper.addInjectAnnotation(at, builder);
-        
         pat.setAnnotatedType(builder.create());
     }
 
@@ -95,14 +91,10 @@ public class BeanTestExtension implements Extension {
      */
     private <X> void modifiyAnnotatedTypeMetadata(ProcessAnnotatedType<X> pat) {
         AnnotatedType at = pat.getAnnotatedType();
-        
         AnnotatedTypeBuilder<X> builder = new AnnotatedTypeBuilder<X>().readFromType(at);
         builder.addToClass(AnnotationInstances.TRANSACTIONAL).addToClass(AnnotationInstances.REQUEST_SCOPED);
-
         InjectionHelper.addInjectAnnotation(at, builder);
-        //Set the wrapper instead the actual annotated type
         pat.setAnnotatedType(builder.create());
-
     }
     
     /**
@@ -118,6 +110,5 @@ public class BeanTestExtension implements Extension {
         InjectionHelper.addInjectAnnotation(pat.getAnnotatedType(), builder);
         pat.setAnnotatedType(builder.create());
     }
-    
 
 }
