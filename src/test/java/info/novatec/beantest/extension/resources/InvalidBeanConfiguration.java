@@ -19,11 +19,14 @@ import javax.annotation.Resource;
 import javax.enterprise.inject.Vetoed;
 
 /**
- * The someField member represents a valid target for the bean modification via {@link info.novatec.beantest.extension.InjectionHelper}
- *
+ * Represents an invalid DI configuration due to the duplicate injection point configuration for field and method.
  * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
  */
 @Vetoed
-public class ValidFieldMember {
+public class InvalidBeanConfiguration {
     @Resource private Void someField;
+
+    @Resource public void setSomeField(Void argument) {
+        this.someField = argument;
+    }
 }

@@ -20,9 +20,7 @@ import org.apache.deltaspike.core.util.metadata.builder.AnnotatedTypeBuilder;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import javax.enterprise.inject.spi.AnnotatedField;
-import javax.enterprise.inject.spi.AnnotatedMethod;
-import javax.enterprise.inject.spi.AnnotatedType;
+import javax.enterprise.inject.spi.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -94,5 +92,13 @@ public class InjectionHelperTest {
         assertThat(annotatedMethod.getAnnotations(), hasSize(2));
 
         verify(spyBuilder, times(1)).addToMethod(annotatedMethod, AnnotationInstances.INJECT);
+    }
+
+    @Test(expected = DefinitionException.class)
+    public void should_throw_deployment_exception_when_invalid_bean_is_processed() throws Exception {
+        AnnotatedTypeBuilder builder = new AnnotatedTypeBuilder().readFromType(InvalidBeanConfiguration.class);
+        AnnotatedType annotatedType = builder.create();
+
+        InjectionHelper.addInjectAnnotation(annotatedType, builder);
     }
 }

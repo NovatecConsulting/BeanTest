@@ -16,15 +16,10 @@
 package info.novatec.beantest.extension;
 
 import java.lang.annotation.Annotation;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import javax.annotation.Resource;
 import javax.ejb.EJB;
-import javax.enterprise.inject.spi.AnnotatedField;
-import javax.enterprise.inject.spi.AnnotatedMember;
-import javax.enterprise.inject.spi.AnnotatedMethod;
-import javax.enterprise.inject.spi.AnnotatedType;
+import javax.enterprise.inject.spi.*;
 import javax.inject.Inject;
 import javax.persistence.PersistenceContext;
 import org.apache.deltaspike.core.util.metadata.builder.AnnotatedTypeBuilder;
@@ -35,61 +30,10 @@ import org.apache.deltaspike.core.util.metadata.builder.AnnotatedTypeBuilder;
  * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
  */
 public final class InjectionHelper {
-    
-    private static final Set<Class<? extends Annotation>> JAVA_EE_ANNOTATIONS = createJavaEEAnnotationSet();
-            
-    private static Set<Class<? extends Annotation>> createJavaEEAnnotationSet() {
-        Set<Class<? extends Annotation>> javaEEAnnotations = new HashSet<Class<? extends Annotation>>();
-        javaEEAnnotations.add(Resource.class);
-        javaEEAnnotations.add(EJB.class);
-        javaEEAnnotations.add(PersistenceContext.class);
-        return Collections.unmodifiableSet(javaEEAnnotations);
-    }
-    
+
     private InjectionHelper() {
     }
-
-    /**
-     * Returns <code>true</code> if the member is NOT annotated with {@link Inject} and is annotated with one of the following annotations:
-     * <ul>
-     * <li> {@link EJB}
-     * <li> {@link PersistenceContext}
-     * <li> {@link Resource}
-     * </ul>
-     * Otherwise, it returns <code>false</code>.
-     *
-     * @param <X>
-     *            the type of the annotated member
-     * @param member
-     *            the annotated member whose annotations should be verified.
-     * @return <code>true</code> if the member is NOT annotated with {@link Inject} and is annotated with {@link EJB},
-     *         {@link PersistenceContext} or {@link Resource}
-     */
-    private static <X> boolean shouldInjectionAnnotationBeAddedToMember(AnnotatedMember<? super X> member) {
-        return !member.isAnnotationPresent(Inject.class) && hasJavaEEAnnotations(member);
-    }
     
-    /**
-     * Returns <code>true</code> if at least one of the following Java EE annotations is present in the given member:
-     * <ul>
-     * <li> {@link EJB}
-     * <li> {@link PersistenceContext}
-     * <li> {@link Resource}
-     * </ul>
-     * Otherwise, it returns <code>false</code>.
-     * @param <X> the type of the annotated member.
-     * @param member the member whose annotations should be verified.
-     * @return <code>true</code> if the member is at least annotated with one of the following annotations: {@link EJB}, {@link PersistenceContext} or {@link Resource}.
-     */
-    private static <X> boolean hasJavaEEAnnotations(AnnotatedMember<? super X> member) {
-         for(Class<? extends Annotation> javaEEannotation : JAVA_EE_ANNOTATIONS) {
-             if (member.isAnnotationPresent(javaEEannotation)) {
-                 return true;
-             }
-         }
-         return false;
-    }
-
     /**
      * Adds the {@link Inject} annotation to the fields and setters of the annotated type if required.
      *
@@ -102,15 +46,137 @@ public final class InjectionHelper {
      * @see #shouldInjectionAnnotationBeAddedToMember(AnnotatedMember)
      */
     public static <X> void addInjectAnnotation(final AnnotatedType<X> annotatedType, AnnotatedTypeBuilder<X> builder) {
-        for (AnnotatedField<? super X> field : annotatedType.getFields()) {
-            if (shouldInjectionAnnotationBeAddedToMember(field)) {
-                builder.addToField(field, AnnotationInstances.INJECT);
+        new InjectionPointReplacement<X>(annotatedType, builder).performReplacements();
+    }
+
+    /**
+     * This class is responsible for transforming {@link EJB}, {@link PersistenceContext} or {@link Resource} injection
+     * points into correlating {@link Inject} dependency definitions.
+     * <p>
+     * Furthermore this class ensures that the processed bean holds valid dependency injection points for its member
+     * i.e. the processed bean may hold exclusively field injection points or setter injection points for a particular
+     * member.
+     * <p>
+     * By way of example the {@link InvalidInjectionPointConfigurationEJB} holds an invalid dependency configuration.
+     * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
+     *
+     */
+    private static class InjectionPointReplacement<X> {
+
+        private static final Set<Class<? extends Annotation>> JAVA_EE_ANNOTATIONS = createJavaEEAnnotationSet();
+
+        private static final String SETTER_METHOD_PREFIX = "set";
+
+        private static final int FIELD_NAME_INDEX = 1;
+
+        private static final String INVALID_BEAN_DEFINITION = "Invalid dependency definition in declaring class: %s."
+                + " Found duplicate injection points for method %s and corresponding field.";
+
+        private List<String> processedFieldInjections = new ArrayList<String>();
+
+        private final AnnotatedType<X> annotatedType;
+
+        private final AnnotatedTypeBuilder<X> builder;
+
+        public InjectionPointReplacement(AnnotatedType<X> annotatedType, AnnotatedTypeBuilder<X> builder) {
+            this.annotatedType = annotatedType;
+            this.builder = builder;
+        }
+
+        private static Set<Class<? extends Annotation>> createJavaEEAnnotationSet() {
+            Set<Class<? extends Annotation>> javaEEAnnotations = new HashSet<Class<? extends Annotation>>();
+            javaEEAnnotations.add(Resource.class);
+            javaEEAnnotations.add(EJB.class);
+            javaEEAnnotations.add(PersistenceContext.class);
+            return Collections.unmodifiableSet(javaEEAnnotations);
+        }
+
+        /**
+         * Returns <code>true</code> if the member is NOT annotated with {@link Inject} and is annotated with one of the following annotations:
+         * <ul>
+         * <li> {@link EJB}
+         * <li> {@link PersistenceContext}
+         * <li> {@link Resource}
+         * </ul>
+         * Otherwise, it returns <code>false</code>.
+         *
+         * @param <X>
+         *            the type of the annotated member
+         * @param member
+         *            the annotated member whose annotations should be verified.
+         * @return <code>true</code> if the member is NOT annotated with {@link Inject} and is annotated with {@link EJB},
+         *         {@link PersistenceContext} or {@link Resource}
+         */
+        private static <X> boolean shouldInjectionAnnotationBeAddedToMember(AnnotatedMember<? super X> member) {
+            return !member.isAnnotationPresent(Inject.class) && hasJavaEEAnnotations(member);
+        }
+
+        /**
+         * Returns <code>true</code> if at least one of the following Java EE annotations is present in the given member:
+         * <ul>
+         * <li> {@link EJB}
+         * <li> {@link PersistenceContext}
+         * <li> {@link Resource}
+         * </ul>
+         * Otherwise, it returns <code>false</code>.
+         * @param <X> the type of the annotated member.
+         * @param member the member whose annotations should be verified.
+         * @return <code>true</code> if the member is at least annotated with one of the following annotations: {@link EJB}, {@link PersistenceContext} or {@link Resource}.
+         */
+        private static <X> boolean hasJavaEEAnnotations(AnnotatedMember<? super X> member) {
+            for(Class<? extends Annotation> javaEEannotation : JAVA_EE_ANNOTATIONS) {
+                if (member.isAnnotationPresent(javaEEannotation)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * This method performs the actual injection point transformation while ensuring that the processed bean
+         * comprise a valid dependency configuration.
+         */
+        public void performReplacements() {
+            for (AnnotatedField<? super X> field : annotatedType.getFields()) {
+                if (shouldInjectionAnnotationBeAddedToMember(field)) {
+                    builder.addToField(field, AnnotationInstances.INJECT);
+                    processedFieldInjections.add(field.getJavaMember().getName());
+                }
+            }
+
+            for (AnnotatedMethod<? super X> method : annotatedType.getMethods()) {
+                if (shouldInjectionAnnotationBeAddedToMember(method)) {
+                    validateDependencyConfiguration(method);
+                    builder.addToMethod(method, AnnotationInstances.INJECT);
+                }
             }
         }
-        for (AnnotatedMethod<? super X> method : annotatedType.getMethods()) {
-            if (shouldInjectionAnnotationBeAddedToMember(method)) {
-                builder.addToMethod(method,  AnnotationInstances.INJECT);
+
+        /**
+         * Check if there is already a processed field injection point for the corresponding member.
+         * If so, the setter injection method for the given member is not legal. The invalid dependency configuration
+         * lead towards to a deployment exception.
+         * @param method Represent the suffix-name of the corresponding setter injection method in the processed bean.
+         * @throws DefinitionException Occurs if there is already a processed field for the given member.
+         */
+        private void validateDependencyConfiguration(AnnotatedMethod<? super X> method) {
+            if(method.getJavaMember().getName().startsWith(SETTER_METHOD_PREFIX)){
+                String methodSuffixName = method.getJavaMember().getName().split(SETTER_METHOD_PREFIX)[FIELD_NAME_INDEX];
+
+                if(isInjectionPointAlreadyProcessed(methodSuffixName)) {
+                    throw new DefinitionException(String.format(INVALID_BEAN_DEFINITION, annotatedType,
+                            method.getJavaMember().getName()));
+                }
             }
+        }
+
+        private boolean isInjectionPointAlreadyProcessed(String methodSuffixName) {
+            for (String processedField : processedFieldInjections) {
+                if (processedField.equalsIgnoreCase(methodSuffixName)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
