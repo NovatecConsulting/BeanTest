@@ -43,7 +43,6 @@ public final class InjectionHelper {
      *            the annotated type whose fields and setters the inject annotation should be added to
      * @param builder
      *            the builder that should be used to add the annotation.
-     * @see #shouldInjectionAnnotationBeAddedToMember(AnnotatedMember)
      */
     public static <X> void addInjectAnnotation(final AnnotatedType<X> annotatedType, AnnotatedTypeBuilder<X> builder) {
         new InjectionPointReplacement<X>(annotatedType, builder).performReplacements();
