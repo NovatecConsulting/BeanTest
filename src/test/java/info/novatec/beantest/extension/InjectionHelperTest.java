@@ -28,7 +28,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 /**
- * Verifies the correct bean manipulation i.e. expected replacements of Java EE DI declarations with CDI @Inject annotation
+ * Verifies the correct bean manipulation i.e. expected replacements of Java EE DI declarations with CDI @Inject annotations
  *
  * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
  */
