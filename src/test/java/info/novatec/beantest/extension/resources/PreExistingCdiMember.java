@@ -23,5 +23,5 @@ import javax.inject.Inject;
  */
 @Vetoed
 public class PreExistingCdiMember {
-    @Inject private Void someField;
+    @Inject private Object someField;
 }

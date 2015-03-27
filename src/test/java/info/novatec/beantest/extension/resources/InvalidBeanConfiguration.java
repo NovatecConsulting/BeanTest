@@ -24,9 +24,9 @@ import javax.enterprise.inject.Vetoed;
  */
 @Vetoed
 public class InvalidBeanConfiguration {
-    @Resource private Void someField;
+    @Resource private Object someField;
 
-    @Resource public void setSomeField(Void argument) {
+    @Resource public void setSomeField(Object argument) {
         this.someField = argument;
     }
 }

@@ -25,10 +25,10 @@ import javax.enterprise.inject.Vetoed;
  */
 @Vetoed
 public class ValidMethodMember {
-    private Void someField;
+    private Object someField;
 
     @Resource
-    public void setSomeField(Void argument) {
+    public void setSomeField(Object argument) {
         this.someField = argument;
     }
 }

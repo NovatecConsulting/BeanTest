@@ -25,5 +25,5 @@ import javax.enterprise.inject.Vetoed;
  */
 @Vetoed
 public class ValidFieldMember {
-    @Resource private Void someField;
+    @Resource private Object someField;
 }
