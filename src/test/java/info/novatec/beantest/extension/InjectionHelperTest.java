@@ -17,6 +17,7 @@ package info.novatec.beantest.extension;
 
 import info.novatec.beantest.extension.resources.*;
 import org.apache.deltaspike.core.util.metadata.builder.AnnotatedTypeBuilder;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -28,7 +29,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 /**
- * Verifies the correct bean manipulation i.e. expected replacements of Java EE DI declarations with CDI @Inject annotations
+ * Verifies the correct bean manipulation i.e. expected replacements of Java EE DI declarations with CDI @Inject annotation
  *
  * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
  */
@@ -40,10 +41,13 @@ public class InjectionHelperTest {
         AnnotatedType annotatedType = builder.create();
         AnnotatedTypeBuilder spyBuilder = Mockito.spy(builder);
 
-        InjectionHelper.addInjectAnnotation(annotatedType, spyBuilder);
         assertThat(annotatedType.getFields().size(), is(1));
 
         AnnotatedField annotatedField = (AnnotatedField) annotatedType.getFields().toArray()[0];
+        assertThat(annotatedField.getAnnotations(), hasSize(0));
+
+        InjectionHelper.addInjectAnnotation(annotatedType, spyBuilder);
+
         assertThat(annotatedField.getAnnotations(), hasSize(0));
 
         verify(spyBuilder, times(0)).addToField(annotatedField, AnnotationInstances.INJECT);
@@ -55,10 +59,13 @@ public class InjectionHelperTest {
         AnnotatedType annotatedType = builder.create();
         AnnotatedTypeBuilder spyBuilder = Mockito.spy(builder);
 
-        InjectionHelper.addInjectAnnotation(annotatedType, spyBuilder);
         assertThat(annotatedType.getFields().size(), is(1));
 
         AnnotatedField annotatedField = (AnnotatedField) annotatedType.getFields().toArray()[0];
+        assertThat(annotatedField.getAnnotations(), hasSize(1));
+
+        InjectionHelper.addInjectAnnotation(annotatedType, spyBuilder);
+
         assertThat(annotatedField.getAnnotations(), hasSize(1));
 
         verify(spyBuilder, times(0)).addToField(annotatedField, AnnotationInstances.INJECT);
@@ -70,10 +77,13 @@ public class InjectionHelperTest {
         AnnotatedType annotatedType = builder.create();
         AnnotatedTypeBuilder spyBuilder = Mockito.spy(builder);
 
-        InjectionHelper.addInjectAnnotation(annotatedType, spyBuilder);
         assertThat(annotatedType.getFields().size(), is(1));
 
         AnnotatedField annotatedField = (AnnotatedField) annotatedType.getFields().toArray()[0];
+        assertThat(annotatedField.getAnnotations(), hasSize(1));
+
+        InjectionHelper.addInjectAnnotation(annotatedType, spyBuilder);
+
         assertThat(annotatedField.getAnnotations(), hasSize(2));
 
         verify(spyBuilder, times(1)).addToField(annotatedField, AnnotationInstances.INJECT);
@@ -85,10 +95,13 @@ public class InjectionHelperTest {
         AnnotatedType annotatedType = builder.create();
         AnnotatedTypeBuilder spyBuilder = Mockito.spy(builder);
 
-        InjectionHelper.addInjectAnnotation(annotatedType, spyBuilder);
         assertThat(annotatedType.getMethods().size(), is(1));
 
         AnnotatedMethod annotatedMethod = (AnnotatedMethod) annotatedType.getMethods().toArray()[0];
+        assertThat(annotatedMethod.getAnnotations(), hasSize(1));
+
+        InjectionHelper.addInjectAnnotation(annotatedType, spyBuilder);
+
         assertThat(annotatedMethod.getAnnotations(), hasSize(2));
 
         verify(spyBuilder, times(1)).addToMethod(annotatedMethod, AnnotationInstances.INJECT);
@@ -97,8 +110,6 @@ public class InjectionHelperTest {
     @Test(expected = DefinitionException.class)
     public void should_throw_deployment_exception_when_invalid_bean_is_processed() throws Exception {
         AnnotatedTypeBuilder builder = new AnnotatedTypeBuilder().readFromType(InvalidBeanConfiguration.class);
-        AnnotatedType annotatedType = builder.create();
-
-        InjectionHelper.addInjectAnnotation(annotatedType, builder);
+        InjectionHelper.addInjectAnnotation(builder.create(), builder);
     }
 }
