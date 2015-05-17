@@ -28,8 +28,8 @@ import org.apache.deltaspike.core.api.provider.BeanProvider;
  */
 public class BeanProviderHelper {
 
-    private  CdiContainer cdiContainer;
-    private static final BeanProviderHelper INSTANCE= new BeanProviderHelper();
+    private CdiContainer cdiContainer;
+    private static final BeanProviderHelper INSTANCE = new BeanProviderHelper();
 
     public static BeanProviderHelper getInstance() {
         return INSTANCE;
@@ -45,7 +45,6 @@ public class BeanProviderHelper {
         cdiContainer = CdiContainerLoader.getCdiContainer();
         cdiContainer.boot();
         cdiContainer.getContextControl().startContexts();
-
     }
 
 

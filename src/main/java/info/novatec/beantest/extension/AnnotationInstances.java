@@ -30,7 +30,6 @@ import org.apache.deltaspike.core.util.metadata.AnnotationInstanceProvider;
 public final class AnnotationInstances {
     
     private AnnotationInstances() {
-        
     }
     
     public static final Transactional TRANSACTIONAL = AnnotationInstanceProvider.of(Transactional.class);

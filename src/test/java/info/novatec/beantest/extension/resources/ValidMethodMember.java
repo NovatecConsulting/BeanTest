@@ -13,30 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package info.novatec.beantest.demo.ejb;
+package info.novatec.beantest.extension.resources;
 
-import javax.ejb.EJB;
-import javax.ejb.Singleton;
+import javax.annotation.Resource;
+import javax.enterprise.inject.Vetoed;
 
 /**
- * Demo EJB Singleton.
- * @author Carlos Barragan (carlos.barragan@novatec-gmbh.de)
+ * The someMethod member represents a valid target for the bean modification via {@link info.novatec.beantest.extension.InjectionHelper}
+ *
+ * @author Qaiser Abbasi (qaiser.abbasi@novatec-gmbh.de)
  */
-@Singleton
-public class MyEjbSingleton {
-    
-    @EJB
-    MyOtherEJBService ejbService;
-    
-    private boolean wasEjbCalled = false;
-    
-    public void callAnEjb() {
-        ejbService.doSomething();
-        wasEjbCalled = true;
+@Vetoed
+public class ValidMethodMember {
+    private Object someField;
+
+    @Resource
+    public void setSomeField(Object argument) {
+        this.someField = argument;
     }
-    
-    public boolean wasEjbCalled() {
-        return this.wasEjbCalled;
-    }
-    
 }
