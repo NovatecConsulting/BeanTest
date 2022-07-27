@@ -153,15 +153,10 @@
     </licenses>
     <distributionManagement>
         <repository>
-            <id>nt-repo</id>
-            <name>Novatec Repository></name>
-            <url>http://repository.novatec-gmbh.de/content/repositories/novatec/</url>
+          <id>github</id>
+          <name>GitHub Packages</name>
+          <url>https://maven.pkg.github.com/novatec-gmbh/bean-test</url>
         </repository>
-        <snapshotRepository>
-            <id>nt-repo</id>
-            <name>Novatec Repository></name>
-            <url>http://repository.novatec-gmbh.de/content/repositories/novatec-snapshots/</url>
-        </snapshotRepository>
-    </distributionManagement>
+      </distributionManagement>
     
 </project>
